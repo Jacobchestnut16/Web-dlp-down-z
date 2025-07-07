@@ -7,6 +7,6 @@
     {
         "file": "New",
         "type": "download",
-        "install": "~\\Downloads\\"
+        "install": "~/Downloads/New/"
     }
 ]

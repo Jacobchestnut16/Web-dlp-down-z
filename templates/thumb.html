@@ -8,22 +8,22 @@
 <body>
 
 <nav>
-<table>
-  <tr>
-    <td>
-      <a href="/edit">Edit</a>
-    </td>
-    <td>
-      <a href="/view">View</a>
-    </td>
-    <td>
-      <a href="/execute">Execute</a>
-    </td>
-      <td>
-          <a href="/config">Config</a>
-      </td>
-  </tr>
-</table>
+    <table>
+        <tr>
+            <td>
+                <a href="/edit">Edit</a>
+            </td>
+            <td>
+                <a href="/view">View</a>
+            </td>
+            <td>
+                <a href="/execute">Execute</a>
+            </td>
+            <td>
+                <a href="/config">Config</a>
+            </td>
+        </tr>
+    </table>
 </nav>
 
 
@@ -36,26 +36,28 @@
 </div>
 <pre id="log" style="white-space: pre-wrap;"></pre>
 
+<div id="file" style="display: none">{{file}}</div>
+
 
 <script>
-  const eventSource = new EventSource("/execute/thumbnail");
+    const eventSource = new EventSource("/execute/thumbnail/{{file}}");
 
     const logElement = document.getElementById("log");
     const progressFill = document.getElementById("progress-fill");
     const progressText = document.getElementById("progress-text");
 
-  eventSource.onmessage = function(event) {
-    console.log("SSE:", event.data);
+    eventSource.onmessage = function(event) {
+        console.log("SSE:", event.data);
 
-    // Append log messages to a container (optional)
-    const log = document.getElementById("log");
-    log.innerText += event.data + "\n";
+        // Append log messages to a container (optional)
+        const log = document.getElementById("log");
+        log.innerText += event.data + "\n";
 
-    // Redirect when done
-    if (event.data.includes("✅ Done.")) {
-      eventSource.close(); // stop listening
-      window.location.href = "/edit/download.json"; // <-- change to desired endpoint
-           };
+        // Redirect when done
+        if (event.data.includes("✅ Done.")) {
+            eventSource.close(); // stop listening
+            window.location.href = "/edit/{{file}}"; // <-- change to desired endpoint
+        };
 
         const msg = event.data;
 
@@ -81,39 +83,39 @@
         }
 
 
-    eventSource.onerror = function () {
-        logElement.textContent += "[Error receiving download updates]\n";
-        eventSource.close();
-    };
-}
+        eventSource.onerror = function () {
+            logElement.textContent += "[Error receiving download updates]\n";
+            eventSource.close();
+        };
+    }
 </script>
 
 <style>
-  #progress-container {
-    margin-bottom: 1em;
-}
+    #progress-container {
+        margin-bottom: 1em;
+    }
 
-#progress-bar {
-    width: 100%;
-    background: #ddd;
-    border: 1px solid #aaa;
-    height: 20px;
-    position: relative;
-    margin-bottom: 5px;
-}
+    #progress-bar {
+        width: 100%;
+        background: #ddd;
+        border: 1px solid #aaa;
+        height: 20px;
+        position: relative;
+        margin-bottom: 5px;
+    }
 
-#progress-fill {
-    height: 100%;
-    width: 0%;
-    background: linear-gradient(to right, #4caf50, #8bc34a);
-    transition: width 0.3s ease;
-}
+    #progress-fill {
+        height: 100%;
+        width: 0%;
+        background: linear-gradient(to right, #4caf50, #8bc34a);
+        transition: width 0.3s ease;
+    }
 
-#progress-text {
-    font-family: monospace;
-    font-size: 14px;
-    color: #333;
-}
+    #progress-text {
+        font-family: monospace;
+        font-size: 14px;
+        color: #333;
+    }
 </style>
 </body>
 </html>

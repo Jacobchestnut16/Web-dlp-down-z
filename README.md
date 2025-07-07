@@ -87,12 +87,13 @@ The `view` section contains log files for both playlist and individual downloads
 
 ---
 
-## Whats New v1.2.1:
+## Whats New v1.2.5:
 
 - Many playlists and Download files
   - This will be fully supported in v1.2.5
   - Creating and saving links ADDED
-  - Execute support NOT SUPPORTED
+  - Execute custom playlists ADDED
+  - Execute custom download support NOT SUPPORTED
 
 ---
 

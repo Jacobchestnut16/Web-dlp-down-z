@@ -183,27 +183,32 @@ def save():
         return f"Error: {e}"
     else:
         if file == DOWNLOAD_FILE:
-            return redirect(url_for('run_thumbnail_generator'))
-        return redirect(url_for('edit', file=file, mark="Saved"))  # or back to 'edit' if that’s the page
+            return redirect(url_for('run_thumbnail_generator', file=DOWNLOAD_FILE))
+        return redirect(url_for('run_thumbnail_generator', file=file))  # or back to 'edit' if that’s the page
 
-@app.route('/run/thumbnail-generator')
-def run_thumbnail_generator():
-    return render_template('thumb.html')
+@app.route('/run/thumbnail-generator/<file>')
+def run_thumbnail_generator(file):
+    return render_template('thumb.html', file=file)
 
 @app.route('/execute')
 def execute_index():
-    return render_template('execute.html', download_dir=DOWNLOAD_DIR)
+    funfiles = []
+    with open(FILE_CONFIG, 'r', encoding='utf-8') as f:
+        files = json.load(f)
+        for item in files:
+            funfiles.append({'type': item['type'], 'file': item['file']})
+    return render_template('execute.html', download_dir=DOWNLOAD_DIR, funfiles=funfiles)
 
-@app.route('/execute/thumbnail')
-def execute_thumbnail():
+@app.route('/execute/thumbnail/<file>')
+def execute_thumbnail(file):
     ansi_escape = re.compile(r'\x1b\[[0-9;]*m')
-    def generate():
+    def generate(file):
         messages = queue.Queue()
 
         yield "data: Finding thumbnails...\n\n"
 
         try:
-            with open(DOWNLOAD_FILE, 'r', encoding='utf-8') as f:
+            with open(file, 'r', encoding='utf-8') as f:
                 download_json = json.load(f)
 
             total = len(download_json)
@@ -283,7 +288,7 @@ def execute_thumbnail():
 
         yield "data: ✅ Done.\n\n"
 
-    return Response(stream_with_context(generate()), content_type='text/event-stream')
+    return Response(stream_with_context(generate(file)), content_type='text/event-stream')
 
 
 @app.route('/execute/playlist')
@@ -378,10 +383,122 @@ def execute_playlist():
 
         yield "data: ✅ Done.\n\n"
 
-        with open(PLAYLIST_FILE, 'w', encoding='utf-8') as f:
-            f.write('')
-
     return Response(stream_with_context(generate()), content_type='text/event-stream')
+
+@app.route('/execute/playlist/<file>')
+def execute_playlist_file(file):
+    logging.basicConfig(level=logging.DEBUG)
+
+    file_name = (file.split('-')[0])
+    file_type = ((file.split('-')[1]).split('.'))[0]
+    with open(FILE_CONFIG, 'r', encoding='utf-8') as f:
+        files = json.load(f)
+    for filef in files:
+        if filef['file'] == file_name and file_type == filef['type']:
+            download_to = filef['install']
+            download_to = os.path.normpath(download_to)
+
+    logging.info(f'Flattening to {download_to}')
+    def generate(file):
+        ydl_opts = {
+            'skip_download': True,
+            'quiet': True,
+            'no_warnings': True,
+            'extract_flat': 'in_playlist'
+        }
+
+        yield "data: Starting playlist separation...\n\n"
+
+        try:
+            with open(file, 'r', encoding='utf-8') as f:
+                playlist_json = json.load(f)
+
+            # Step 2: Process each line one by one
+            for playlist in playlist_json:
+                playlist_json.pop(0)
+                url = playlist["url"]  # filename URL
+                name = playlist["file"] if playlist["file"] else "unnamed"
+
+                yield f"data: ▶️ Processing playlist: {url}\n\n"
+                logging.info(f'Processing playlist: {url}')
+
+                try:
+                    with YoutubeDL(ydl_opts) as ydl:
+                        info = ydl.extract_info(url, download=False)
+
+                        if '_type' in info and info['_type'] == 'playlist':
+                            entries = info.get('entries', [])
+                            # print(entries)
+                            for entry in entries:
+                                video_title = entry.get('title', 'Unknown title')
+                                video_url = entry.get('url')
+
+                                if not video_url:
+                                    yield f"data: ⚠️ Skipped video (missing URL): {video_title}\n\n"
+                                    continue
+
+                                full_url = entry.get('url')
+
+                                if video_title.lower() in ['unknown title', 'unknown']:
+                                    parsed = urlparse(full_url)
+                                    last_segment = parsed.path.rstrip('/').split('/')[-1] or 'untitled'
+                                    video_title = last_segment
+
+                                logging.info(f'Playlist found: {video_title}')
+
+                                # Save it
+                                if os.path.exists(download_to):
+                                    with open(download_to, 'r', encoding='utf-8') as f:
+                                        try:
+                                            entries = json.load(f)
+                                            if not isinstance(entries, list):
+                                                entries = []
+                                        except json.JSONDecodeError:
+                                            entries = []
+
+                                    # Step 2: Append new entry
+                                entries.append({
+                                    "file": video_title,
+                                    "url": full_url
+                                })
+
+                                # Step 3: Write updated list back to file
+                                with open(download_to, 'w', encoding='utf-8') as f:
+                                    json.dump(entries, f, indent=4)
+
+                                yield f"data: ✅ Added: {video_title}\n\n"
+                                logging.info(f'Added: {video_title}')
+
+                        else:
+                            yield f"data: ⚠️ Not a playlist: {url}\n\n"
+                            logging.warn(f'Not a playlist: {url}')
+                except Exception as ve:
+                    yield f"data: ❌ Error processing {url}: {str(ve).splitlines()[0]}\n\n"
+                    logging.error(f'Error: {ve}')
+
+
+                time.sleep(0.2)
+
+                yield f"data: ▶️ Reached Playlist end: {url}\n\n"
+                logging.info(f'Reached Playlist end: {url}')
+
+                with open(PLAYLIST_PROCESS_FILE, 'a', encoding='utf-8') as out:
+                    log_time = datetime.datetime.now()
+                    log_time = log_time.strftime('%Y-%m-%d %H:%M')
+                    out.write(f'{log_time} {name} {url}\n')
+
+                with open(file, 'w', encoding='utf-8') as f:
+                    json.dump(playlist_json, f, indent=4)
+
+
+        except Exception as e:
+            yield f"data: 🚫 Fatal error: {str(e)}\n\n"
+            logging.error(f'Error: {e}')
+
+        yield "data: ✅ Done.\n\n"
+        yield f"data: REDIRECT /run/thumbnail-generator/{download_to}\n\n"
+
+    return Response(stream_with_context(generate(file)), content_type='text/event-stream')
 
 @app.route('/execute/download')
 def execute_download():

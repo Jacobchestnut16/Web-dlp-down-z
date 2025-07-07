@@ -8,26 +8,39 @@
 </head>
 <body>
 <nav>
-<table>
-  <tr>
-    <td>
-      <a href="/edit">Edit</a>
-    </td>
-    <td>
-      <a href="/view">View</a>
-    </td>
-    <td>
-      <a href="/execute">Execute</a>
-    </td>
-      <td>
-          <a href="/config">Config</a>
-      </td>
-  </tr>
-  <tr>
-    <td><a onclick="startPlaylist()">Process playlists</a></td>
-    <td><a onclick="startDownloading()">Start Downloads</a></td>
-  </tr>
-</table>
+    <table>
+        <tr>
+            <td>
+                <a href="/edit">Edit</a>
+            </td>
+            <td>
+                <a href="/view">View</a>
+            </td>
+            <td>
+                <a href="/execute">Execute</a>
+            </td>
+            <td>
+                <a href="/config">Config</a>
+            </td>
+        </tr>
+        <tr>
+            <td><a onclick="startPlaylist()">Process playlists</a></td>
+            <td><a onclick="startDownloading()">Start Downloads</a></td>
+            {% for entry in funfiles %}
+            <td>
+                {% if entry.type == 'download' %}
+                <a onclick="executeDownload('{{entry.file}}-{{entry.type}}.json')">
+                    Start
+                    {% elif entry.type == 'playlist' %}
+                    <a onclick="executePlaylist('{{entry.file}}-{{entry.type}}.json')">
+                        Process
+                        {% endif %}
+                        {{(entry.file)}} {{entry.type}}s
+                    </a>
+            </td>
+            {% endfor %}
+        </tr>
+    </table>
 </nav>
 {% if download_dir %}
 <h2>Download Directory: {{download_dir}}</h2>
@@ -44,90 +57,149 @@
 
 <script>
     function startPlaylist() {
-            const logElement = document.getElementById("log");
-    const eventSource = new EventSource("/execute/playlist");
+        const logElement = document.getElementById("log");
+        const eventSource = new EventSource("/execute/playlist");
 
-    eventSource.onmessage = function (event) {
-        logElement.textContent += event.data + "\n";
-        logElement.scrollTop = logElement.scrollHeight;  // auto-scroll
-        if (event.data.includes("✅ Done.")) {
-          eventSource.close(); // stop listening
-          window.location.href = "/run/thumbnail-generator"; // <-- change to desired endpoint
+        eventSource.onmessage = function (event) {
+            logElement.textContent += event.data + "\n";
+            logElement.scrollTop = logElement.scrollHeight;  // auto-scroll
+            if (event.data.includes("✅ Done.")) {
+                eventSource.close(); // stop listening
+                window.location.href = "/run/thumbnail-generator/download.json"; // <-- change to desired endpoint
+            };
         };
-    };
 
-    eventSource.onerror = function () {
-        logElement.textContent += "[Error receiving updates]\n";
-        eventSource.close();
-    };
+        eventSource.onerror = function () {
+            logElement.textContent += "[Error receiving updates]\n";
+            eventSource.close();
+        };
 
 
     }
-function startDownloading() {
-    const logElement = document.getElementById("log");
-    const progressFill = document.getElementById("progress-fill");
-    const progressText = document.getElementById("progress-text");
+    function executePlaylist(file) {
+        const logElement = document.getElementById("log");
+        const eventSource = new EventSource("/execute/playlist/"+file);
 
-    const eventSource = new EventSource("/execute/download");
+        eventSource.onmessage = function (event) {
+            logElement.textContent += event.data + "\n";
+            logElement.scrollTop = logElement.scrollHeight;  // auto-scroll
+                if (event.data.startsWith("REDIRECT ")) {
+                    const targetUrl = event.data.replace("REDIRECT ", "").trim();
+                    eventSource.close();
+                    window.location.href = targetUrl;
+                }
+        };
 
-    eventSource.onmessage = function (event) {
-        const msg = event.data;
+        eventSource.onerror = function () {
+            logElement.textContent += "[Error receiving updates]\n";
+            eventSource.close();
+        };
 
-        if (msg.startsWith("Downloading:")) {
-            // Example msg: Downloading: 30.5% at 370KiB/s, ETA 01:34
-            const percentMatch = msg.match(/Downloading:\s*([\d.]+)%/);
-            const etaMatch = msg.match(/ETA\s+(\S+)/);
 
-            const percent = percentMatch ? parseFloat(percentMatch[1]) : 0;
-            const eta = etaMatch ? etaMatch[1] : "unknown";
+    }
+    function startDownloading() {
+        const logElement = document.getElementById("log");
+        const progressFill = document.getElementById("progress-fill");
+        const progressText = document.getElementById("progress-text");
 
-            progressFill.style.width = percent + "%";
-            // progressText.textContent = `[${"█".repeat(Math.floor(percent / 5)).padEnd(20, "░")}] ${percent.toFixed(1)}% — ETA ${eta}`;
-            progressText.textContent = `${percent.toFixed(1)}% — ETA ${eta}`;
-        } else {
-            logElement.textContent += msg + "\n";
-            logElement.scrollTop = logElement.scrollHeight;
+        const eventSource = new EventSource("/execute/download");
 
-            if (msg.includes("✅ Done.") || msg.includes("Download complete")) {
-                progressText.textContent = "✅ Idle";
-                progressFill.style.width = "0%";
+        eventSource.onmessage = function (event) {
+            const msg = event.data;
+
+            if (msg.startsWith("Downloading:")) {
+                // Example msg: Downloading: 30.5% at 370KiB/s, ETA 01:34
+                const percentMatch = msg.match(/Downloading:\s*([\d.]+)%/);
+                const etaMatch = msg.match(/ETA\s+(\S+)/);
+
+                const percent = percentMatch ? parseFloat(percentMatch[1]) : 0;
+                const eta = etaMatch ? etaMatch[1] : "unknown";
+
+                progressFill.style.width = percent + "%";
+                // progressText.textContent = `[${"█".repeat(Math.floor(percent / 5)).padEnd(20, "░")}] ${percent.toFixed(1)}% — ETA ${eta}`;
+                progressText.textContent = `${percent.toFixed(1)}% — ETA ${eta}`;
+            } else {
+                logElement.textContent += msg + "\n";
+                logElement.scrollTop = logElement.scrollHeight;
+
+                if (msg.includes("✅ Done.") || msg.includes("Download complete")) {
+                    progressText.textContent = "✅ Idle";
+                    progressFill.style.width = "0%";
+                }
             }
-        }
-    };
+        };
 
-    eventSource.onerror = function () {
-        logElement.textContent += "[Error receiving download updates]\n";
-        eventSource.close();
-    };
-}
+        eventSource.onerror = function () {
+            logElement.textContent += "[Error receiving download updates]\n";
+            eventSource.close();
+        };
+    }
+
+    function executeDownload(file) {
+        const logElement = document.getElementById("log");
+        const progressFill = document.getElementById("progress-fill");
+        const progressText = document.getElementById("progress-text");
+
+        const eventSource = new EventSource("/execute/download/"+file);
+
+        eventSource.onmessage = function (event) {
+            const msg = event.data;
+
+            if (msg.startsWith("Downloading:")) {
+                // Example msg: Downloading: 30.5% at 370KiB/s, ETA 01:34
+                const percentMatch = msg.match(/Downloading:\s*([\d.]+)%/);
+                const etaMatch = msg.match(/ETA\s+(\S+)/);
+
+                const percent = percentMatch ? parseFloat(percentMatch[1]) : 0;
+                const eta = etaMatch ? etaMatch[1] : "unknown";
+
+                progressFill.style.width = percent + "%";
+                // progressText.textContent = `[${"█".repeat(Math.floor(percent / 5)).padEnd(20, "░")}] ${percent.toFixed(1)}% — ETA ${eta}`;
+                progressText.textContent = `${percent.toFixed(1)}% — ETA ${eta}`;
+            } else {
+                logElement.textContent += msg + "\n";
+                logElement.scrollTop = logElement.scrollHeight;
+
+                if (msg.includes("✅ Done.") || msg.includes("Download complete")) {
+                    progressText.textContent = "✅ Idle";
+                    progressFill.style.width = "0%";
+                }
+            }
+        };
+
+        eventSource.onerror = function () {
+            logElement.textContent += "[Error receiving download updates]\n";
+            eventSource.close();
+        };
+    }
 </script>
 
 <style>
-  #progress-container {
-    margin-bottom: 1em;
-}
+    #progress-container {
+        margin-bottom: 1em;
+    }
 
-#progress-bar {
-    width: 100%;
-    background: #ddd;
-    border: 1px solid #aaa;
-    height: 20px;
-    position: relative;
-    margin-bottom: 5px;
-}
+    #progress-bar {
+        width: 100%;
+        background: #ddd;
+        border: 1px solid #aaa;
+        height: 20px;
+        position: relative;
+        margin-bottom: 5px;
+    }
 
-#progress-fill {
-    height: 100%;
-    width: 0%;
-    background: linear-gradient(to right, #4caf50, #8bc34a);
-    transition: width 0.3s ease;
-}
+    #progress-fill {
+        height: 100%;
+        width: 0%;
+        background: linear-gradient(to right, #4caf50, #8bc34a);
+        transition: width 0.3s ease;
+    }
 
-#progress-text {
-    font-family: monospace;
-    font-size: 14px;
-    color: #333;
-}
+    #progress-text {
+        font-family: monospace;
+        font-size: 14px;
+        color: #333;
+    }
 </style>
 
 
