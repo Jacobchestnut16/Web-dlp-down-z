@@ -19,16 +19,30 @@ Before starting, configure your download path in the `config` file, this can be 
 
 ## ✍️ Using the Tool – Editing Links
 
-Navigate to the `edit` section. You'll find two files:
+Navigate to the `edit` section. You'll find two types:
 
-- **downloads**:  
+- **Downloads**:  
   Contains individual media links to be downloaded.  
   - You can **remove**, **reorder**, or **add** links as needed.
   - Links will be processed in the order they appear.
+  
+  Default file:
+  - Downloads to the location in the config file
+  
+  Create your own list:
+  - Save the download location in the edit tab
 
 - **playlist**:  
   Contains URLs to playlists.  
   - Must be valid playlist links with downloadable media.
+  
+  Default file:
+  - Extracts links to the default download file
+  
+  Create your own list:
+  - Extracts to the file you chose in the edit tab
+    - The edit tab will rename everything to the original file name after hitting saved do not worry about this there will be a fix soon
+  
   >WARNING:
   >Each entry includes a **namespace** (a descriptive name or label). This is for logging and readability only; it does not affect the actual filenames.
 
@@ -73,11 +87,12 @@ The `view` section contains log files for both playlist and individual downloads
 
 ---
 
-## Whats New v1.1.0:
+## Whats New v1.2.1:
 
-- Thumbnail images
-- Json file format over the previous txt
-- 
+- Many playlists and Download files
+  - This will be fully supported in v1.2.5
+  - Creating and saving links ADDED
+  - Execute support NOT SUPPORTED
 
 ---
 
