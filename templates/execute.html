@@ -50,12 +50,18 @@
     eventSource.onmessage = function (event) {
         logElement.textContent += event.data + "\n";
         logElement.scrollTop = logElement.scrollHeight;  // auto-scroll
+        if (event.data.includes("✅ Done.")) {
+          eventSource.close(); // stop listening
+          window.location.href = "/run/thumbnail-generator"; // <-- change to desired endpoint
+        };
     };
 
     eventSource.onerror = function () {
         logElement.textContent += "[Error receiving updates]\n";
         eventSource.close();
     };
+
+
     }
 function startDownloading() {
     const logElement = document.getElementById("log");

@@ -2,7 +2,13 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>{{where}}</title>
+    <title>
+        {% if where %}
+        {{(where.split('.'))[0].capitalize()}}
+        {% else %}
+        Edit
+        {% endif %}
+    </title>
 
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 
@@ -27,8 +33,8 @@
       </td>
   </tr>
   <tr>
-    <td><a href="/edit/playlist.txt">Edit Playlists</a></td>
-    <td><a href="/edit/download.txt">Edit Downloads</a></td>
+    <td><a href="/edit/playlist.json">Edit Playlists</a></td>
+    <td><a href="/edit/download.json">Edit Downloads</a></td>
   </tr>
 </table>
 </nav>
@@ -38,7 +44,7 @@
 
 {% if where %}
 <form method="post" action="/save">
-  <input type="hidden" name="file" value="{{where}}.txt">
+  <input type="hidden" name="file" value="{{where}}">
       <div style="margin-top: 10px;">
         <table>
               <thead>
@@ -67,7 +73,7 @@
     </div>
     <table id="entries-list">
     <thead>
-    <tr><td><h2 style="text-wrap: nowrap">{{where}} Items:</h2></td></tr>
+    <tr><td><h2 style="text-wrap: nowrap">{{(where.split('.'))[0].capitalize()}} Items:</h2></td></tr>
         <tr>
             <th></th>
             <th>Thumbnail</th>

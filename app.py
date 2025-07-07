@@ -13,9 +13,9 @@ from yt_dlp import YoutubeDL
 
 app = Flask(__name__)
 
-PLAYLIST_FILE = 'playlist.txt'
+PLAYLIST_FILE = 'playlist.json'
 PLAYLIST_PROCESS_FILE = 'playlist_processed.txt'
-DOWNLOAD_FILE = 'download.txt'
+DOWNLOAD_FILE = 'download.json'
 PROCESS_FILE = 'process.txt'
 CONFIG_FILE = 'config.json'
 DOWNLOAD_DIR = '~/Downloads'
@@ -40,24 +40,31 @@ def edit_index():
     return render_template('file.html')
 @app.route('/edit/<file>', methods=['GET', 'POST'])
 def edit(file):
-#     playlist_entries = json.load(f)
-#
-#
-# for entry in playlist_entries:
-#     filename = entry['filename']
-#     website = entry['website']
-    with open(file, 'r') as f:
-        lines = [line.strip() for line in f if line.strip()]
-        entries = []
-        for line in lines:
-            parts = line.rsplit(maxsplit=1)
-            if len(parts) == 2:
-                filename, website = parts
-                entries.append({'filename': filename, 'website': website})
-            else:
-                # If there's a malformed line, skip or handle it
-                entries.append({'filename': parts[0], 'website': ''})
-    return render_template('file.html', entries=entries, where=file[:-4])
+
+    entries = []
+
+    try:
+        with open(file, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+            print("DATA LOADED:", data)  # Debug print
+
+            if isinstance(data, list):
+                for item in data:
+                    filename = item.get('file', '').strip()
+                    website = item.get('url', '').strip()
+                    if filename:  # Only add if filename exists
+                        entries.append({
+                            'filename': filename,
+                            'website': website
+                        })
+    except FileNotFoundError:
+        print("playlist.json not found.")
+    except json.JSONDecodeError as e:
+        print("JSON decode error:", e)
+
+    print("ENTRIES PREPARING FOR TEMPLATE:", entries)  # Debug print
+
+    return render_template('file.html', entries=entries, where=file)
 
 @app.route('/save', methods=['GET', 'POST'])
 def save():
@@ -72,10 +79,15 @@ def save():
         return redirect(url_for('setConfigSettings'))
 
     try:
+        entries = []
+        for name, site in zip(filenames, websites):
+            entries.append({
+                'file': name,
+                'url': site
+            })
+
         with open(file, 'w', encoding='utf-8') as f:
-            for name, site in zip(filenames, websites):
-                line = f"{name} {site}\n"
-                f.write(line)
+            json.dump(entries, f, indent=4)
     except Exception as e:
         return f"Error: {e}"
     else:
@@ -93,11 +105,6 @@ def execute_index():
 
 @app.route('/execute/thumbnail')
 def execute_thumbnail():
-
-    with open(DOWNLOAD_FILE, 'r', encoding='utf-8') as f:
-        lines = [line.strip() for line in f if line.strip()]
-        total = len(lines) + 1
-        count = 1
     ansi_escape = re.compile(r'\x1b\[[0-9;]*m')
     def generate():
         messages = queue.Queue()
@@ -106,18 +113,17 @@ def execute_thumbnail():
 
         try:
             with open(DOWNLOAD_FILE, 'r', encoding='utf-8') as f:
-                lines = [line.strip() for line in f if line.strip()]
+                download_json = json.load(f)
 
-            while lines:
-                line = lines.pop(0)
-                parts = line.strip().rsplit(' ', 1)  # Split into max 2 parts from the right
+            total = len(download_json)
+            current_index = 0
 
-                if len(parts) == 2:
-                    name, url = parts[0], parts[1]
-                else:
-                    name = "unnamed"
-                    url = parts[0]
-                current_index = total - len(lines)
+            # Step 2: Process each line one by one
+            for file in download_json:
+                download_json.pop(0)
+                current_index += 1
+                url = file["url"]  # filename URL
+                name = file["file"] if file["file"] else "unnamed"
 
                 def find_file_without_ext(directory, filename_without_ext):
                     for root, dirs, files in os.walk(directory):
@@ -203,14 +209,13 @@ def execute_playlist():
 
         try:
             with open(PLAYLIST_FILE, 'r', encoding='utf-8') as f:
-                playlist_lines = [line.strip() for line in f if line.strip()]
+                playlist_json = json.load(f)
 
             # Step 2: Process each line one by one
-            while playlist_lines:
-                line = playlist_lines.pop(0)
-                parts = line.strip().split(' ')
-                url = parts[-1]  # filename URL
-                name = parts[0] if len(parts) > 1 else "unnamed"
+            for playlist in playlist_json:
+                playlist_json.pop(0)
+                url = playlist["url"]  # filename URL
+                name = playlist["file"] if playlist["file"] else "unnamed"
 
                 yield f"data: ▶️ Processing playlist: {url}\n\n"
 
@@ -237,10 +242,24 @@ def execute_playlist():
                                     video_title = last_segment
 
                                 # Save it
-                                with open(DOWNLOAD_FILE, 'a', encoding='utf-8') as out:
-                                    time = datetime.datetime.now()
-                                    time = time.strftime('%Y-%m-%d %H:%M')
-                                    out.write(f"{time} {video_title} {full_url}\n")
+                                if os.path.exists(DOWNLOAD_FILE):
+                                    with open(DOWNLOAD_FILE, 'r', encoding='utf-8') as f:
+                                        try:
+                                            entries = json.load(f)
+                                            if not isinstance(entries, list):
+                                                entries = []
+                                        except json.JSONDecodeError:
+                                            entries = []
+
+                                    # Step 2: Append new entry
+                                entries.append({
+                                    "file": video_title,
+                                    "url": full_url
+                                })
+
+                                # Step 3: Write updated list back to file
+                                with open(DOWNLOAD_FILE, 'w', encoding='utf-8') as f:
+                                    json.dump(entries, f, indent=4)
 
                                 yield f"data: ✅ Added: {video_title}\n\n"
 
@@ -255,11 +274,13 @@ def execute_playlist():
                 yield f"data: ▶️ Reached Playlist end: {url}\n\n"
 
                 with open(PLAYLIST_PROCESS_FILE, 'a', encoding='utf-8') as out:
-                    out.write(f'{name} {url}\n')
+                    log_time = datetime.datetime.now()
+                    log_time = log_time.strftime('%Y-%m-%d %H:%M')
+                    out.write(f'{log_time} {name} {url}\n')
 
                 with open(PLAYLIST_FILE, 'w', encoding='utf-8') as f:
-                    for remaining in playlist_lines:
-                        f.write(remaining + '\n')
+                    json.dump(playlist_json, f, indent=4)
+
 
         except Exception as e:
             yield f"data: 🚫 Fatal error: {str(e)}\n\n"
@@ -273,30 +294,26 @@ def execute_playlist():
 
 @app.route('/execute/download')
 def execute_download():
-    with open(DOWNLOAD_FILE, 'r', encoding='utf-8') as f:
-        lines = [line.strip() for line in f if line.strip()]
-        total = len(lines) + 1
-        count = 1
+    logging.basicConfig(level=logging.DEBUG)
     ansi_escape = re.compile(r'\x1b\[[0-9;]*m')
     def generate():
         messages = queue.Queue()
 
         yield "data: Starting Downloading process...\n\n"
-
+        logging.info("data: Downloading started")
         try:
             with open(DOWNLOAD_FILE, 'r', encoding='utf-8') as f:
-                lines = [line.strip() for line in f if line.strip()]
+                download_json = json.load(f)
 
-            while lines:
-                line = lines.pop(0)
-                parts = line.strip().rsplit(' ', 1)  # Split into max 2 parts from the right
+            total = len(download_json)
+            current_index = 0
 
-                if len(parts) == 2:
-                    name, url = parts[0], parts[1]
-                else:
-                    name = "unnamed"
-                    url = parts[0]
-                current_index = total - len(lines)
+            # Step 2: Process each line one by one
+            for file in download_json:
+                download_json.pop(0)
+                current_index += 1
+                url = file["url"]  # filename URL
+                name = file["file"] if file["file"] else "unnamed"
 
                 # Progress hook to receive download updates
                 def progress_hook(d):
@@ -320,6 +337,7 @@ def execute_download():
                 }
 
                 yield f"data: ▶️ Downloading ({current_index}/{total}): {name}, {url}\n\n"
+                logging.info(f"data: Downloading ({current_index}/{total}): {name}, {url}")
 
                 try:
                     def download_and_drain():
@@ -346,16 +364,18 @@ def execute_download():
 
                     # Remove the finished URL from the list
                     with open(DOWNLOAD_FILE, 'w', encoding='utf-8') as f:
-                        for rem_line in lines:
-                            f.write(rem_line + '\n')
+                        json.dump(download_json, f, indent=4)
 
                 except Exception as ve:
                     yield f"data: ❌ Error processing {name},{url}: {str(ve).splitlines()[0]}\n\n"
+                    logging.error(f"data: Error processing {name},{url}: {str(ve).splitlines()[0]}")
 
         except Exception as ve:
             yield f"data: 🚫 Fatal error: {str(ve)}\n\n"
+            logging.error(f"data: Fatal error: {str(ve)}")
 
         yield "data: ✅ Done.\n\n"
+        logging.info("data: Done.")
 
     return Response(stream_with_context(generate()), content_type='text/event-stream')
 
@@ -383,6 +403,7 @@ def setConfigSettings():
     logging.info(f"web setConfigSettings: running")
     try:
         DOWNLOAD_DIR = os.path.normpath(config['Download To'])
+        DOWNLOAD_DIR = DOWNLOAD_DIR + os.path.sep
         logging.info(f"web setConfigSettings: Download Dir {DOWNLOAD_DIR}")
     except Exception as e:
         logging.error(f"web setConfigSettings: could not open Download Dir: {str(e)}")
@@ -419,6 +440,7 @@ def configBackground():
     logging.info(f"configBackground: running")
     try:
         DOWNLOAD_DIR = os.path.normpath(config['Download To'])
+        DOWNLOAD_DIR = DOWNLOAD_DIR + os.path.sep
         logging.info(f"configBackground: Download Dir {DOWNLOAD_DIR}")
     except Exception as e:
         logging.error(f"configBackground: could not open Download Dir: {str(e)}")
@@ -449,8 +471,8 @@ if __name__ == '__main__':
         with open('config.json', 'x', encoding='utf-8') as f:
             f.write('''"web-dlp-down-z Log file": "logs",
             "Download To": "~/Downloads",
-            "Download File": "download.txt",
-            "Playlist File": "playlist.txt",
+            "Download File": "download.json",
+            "Playlist File": "playlist.json",
             "Download full log": "log_download.txt",
             "Playlist full log": "log_download.txt",
             "Process": "process.txt",
