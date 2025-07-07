@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{where}}</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+</head>
+<body>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+
+<nav>
+  <table>
+      <tr>
+    <td>
+      <a href="/edit">Edit</a>
+    </td>
+    <td>
+      <a href="/view">View</a>
+    </td>
+    <td>
+      <a href="/execute">Execute</a>
+    </td>
+      <td>
+          <a href="/config">Config</a>
+      </td>
+  </tr>
+  <tr>
+    <td><a href="/edit/playlist.txt">Edit Playlists</a></td>
+    <td><a href="/edit/download.txt">Edit Downloads</a></td>
+  </tr>
+</table>
+</nav>
+
+<h1>Edit</h1>
+
+
+{% if where %}
+<form method="post" action="/save">
+  <input type="hidden" name="file" value="{{where}}.txt">
+      <div style="margin-top: 10px;">
+        <table>
+              <thead>
+              <tr><td><h2>Add item</h2></td></tr>
+        <tr>
+            <th>Filename</th>
+            <th>Website</th>
+            <th></th>
+        </tr>
+    </thead>
+          <tbody>
+          <tr>
+            <td>
+        <input type="text" id="new-filename" placeholder="Filename">
+            </td>
+            <td>
+        <input type="text" id="new-website" placeholder="Website">
+            </td>
+            <td>
+        <button type="button" onclick="addEntry()">Add</button>
+            </td>
+          </tr>
+          </tbody>
+        </table>
+
+    </div>
+    <table id="entries-list">
+    <thead>
+    <tr><td><h2 style="text-wrap: nowrap">{{where}} Items:</h2></td></tr>
+        <tr>
+            <th></th>
+            <th>Filename</th>
+            <th>Website</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody id="sortable-table">
+        {% for entry in entries %}
+            <tr>
+                <td class="drag-handle">☰</td>
+                <td><input type="text" name="filename" value="{{ entry.filename }}"></td>
+                <td><input type="text" name="website" value="{{ entry.website }}"></td>
+                <td><button type="button" onclick="removeEntry(this)">Remove</button></td>
+            </tr>
+        {% endfor %}
+    </tbody>
+    </table>
+    <br>
+    <button type="submit">Save</button>
+</form>
+{% else %}
+<p>Select a file</p>
+{% endif %}
+
+<script>
+    new Sortable(document.getElementById('sortable-table'), {
+        animation: 150,
+        ghostClass: 'sortable-ghost',
+        handle: 'td', // Make the whole row draggable
+    });
+
+    function removeEntry(button) {
+        const row = button.closest('tr');
+        row.remove();
+    }
+
+    function addEntry() {
+        const filename = document.getElementById('new-filename').value.trim();
+        const website = document.getElementById('new-website').value.trim();
+
+        if (!filename || !website) {
+            alert("Both fields are required.");
+            return;
+        }
+
+        const tbody = document.getElementById('sortable-table');
+
+        const newRow = document.createElement('tr');
+        newRow.innerHTML = `
+            <td><input type="text" name="filename" value="${filename}"></td>
+            <td><input type="text" name="website" value="${website}"></td>
+            <td><button type="button" onclick="removeEntry(this)">Remove</button></td>
+        `;
+        tbody.appendChild(newRow);
+
+        document.getElementById('new-filename').value = '';
+        document.getElementById('new-website').value = '';
+    }
+</script>
+
+
+{{mark}}
+
+<style>
+    .drag-handle {
+        cursor: grab;
+        font-size: 18px;
+        text-align: center;
+        width: 30px;
+        user-select: none;
+    }
+
+    .sortable-ghost {
+        opacity: 0.4;
+        background: #ffffcc;
+    }
+</style>
+
+
+</body>
+</html>
