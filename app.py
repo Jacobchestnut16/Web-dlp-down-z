@@ -19,6 +19,7 @@ DOWNLOAD_FILE = 'download.json'
 PROCESS_FILE = 'process.txt'
 CONFIG_FILE = 'config.json'
 DOWNLOAD_DIR = '~/Downloads'
+FILE_CONFIG = 'file_config.json'
 
 
 @app.route('/')
@@ -37,11 +38,21 @@ def view(file):
 
 @app.route('/edit')
 def edit_index():
-    return render_template('file.html')
+    funfiles = []
+
+    with open(FILE_CONFIG, 'r', encoding='utf-8') as f:
+        files = json.load(f)
+        for item in files:
+            funfiles.append({'type': item['type'], 'file': item['file'], 'install': item['install']})
+
+    print("FILES LOADED:", funfiles)
+    return render_template('file.html', funfiles=funfiles)
 @app.route('/edit/<file>', methods=['GET', 'POST'])
 def edit(file):
 
     entries = []
+    funfiles = []
+    type = None
 
     try:
         with open(file, 'r', encoding='utf-8') as f:
@@ -62,9 +73,89 @@ def edit(file):
     except json.JSONDecodeError as e:
         print("JSON decode error:", e)
 
-    print("ENTRIES PREPARING FOR TEMPLATE:", entries)  # Debug print
+    try:
+        named = (file.split('-'))[0]
+        type = ((file.split('-'))[1].split('.'))[0]
+    except Exception as e:
+        named = None
 
-    return render_template('file.html', entries=entries, where=file)
+    with open(FILE_CONFIG, 'r', encoding='utf-8') as f:
+        files = json.load(f)
+        for item in files:
+            if named == item['file'] and item['type'] == type:
+                type = item['type']
+                install = item['install']
+                print("TYPE LOADED:", type)
+            funfiles.append({'type': item['type'], 'file': item['file'], 'install': item['install']})
+
+    installOpts = []
+    if type == 'playlist':
+        with open(FILE_CONFIG, 'r', encoding='utf-8') as f:
+            files = json.load(f)
+            for item in files:
+                if item['type'] == 'download':
+                    installOpts.append(item['file'])
+
+
+    return render_template('file.html', entries=entries, where=file, funfiles=funfiles, type=type, install=install, installOpts=installOpts)
+
+@app.route('/save/installs', methods=['POST'])
+def save_installs():
+    if request.method == 'POST':
+        install = request.form['install']
+        where = request.form['file']
+        name = (where.split('-'))[0]
+        type = ((where.split('-'))[1].split('.'))[0]
+        with open (FILE_CONFIG, 'r', encoding='utf-8') as f:
+            config = json.load(f)
+        for item in config:
+            if item['type'] == type and item['file'] == name:
+                item['install'] = install
+        with open(FILE_CONFIG, 'w', encoding='utf-8') as f:
+            json.dump(config, f, indent=4, ensure_ascii=False)
+        return redirect(url_for('edit', file=where))
+
+@app.route('/create-file')
+def create_file():
+    return render_template('createfile.html')
+
+@app.route('/new', methods=['GET', 'POST'])
+def new():
+    if request.method == 'POST':
+        file = request.form.get('file')
+        type = request.form.get('type')
+        def normalize_filename(name):
+            # Remove illegal characters (for Windows)
+            return re.sub(r'[<>:"/\\|?*\-]', '', name).strip()
+        fileName = normalize_filename(file)+'-'+type+'.json'
+        try:
+            with open(fileName, 'x', encoding='utf-8') as f:
+                data = []
+                f.write(json.dumps(data))
+        except FileExistsError:
+            pass
+        with open(FILE_CONFIG, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        with open(FILE_CONFIG, 'w', encoding='utf-8') as f:
+            if type == 'download':
+                data.append(
+                    {
+                        'file': file,
+                        'type': type,
+                        'install': DOWNLOAD_DIR
+                    }
+                )
+            if type == 'playlist':
+                data.append(
+                    {
+                        'file': file,
+                        'type': type,
+                        'install': DOWNLOAD_FILE
+                    }
+                )
+            f.write(json.dumps(data))
+        return redirect(url_for('edit', file=file))
+
 
 @app.route('/save', methods=['GET', 'POST'])
 def save():

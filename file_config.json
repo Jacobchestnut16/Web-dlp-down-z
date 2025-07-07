@@ -1,0 +1,12 @@
+[
+    {
+        "file": "New",
+        "type": "playlist",
+        "install": "New-download.json"
+    },
+    {
+        "file": "New",
+        "type": "download",
+        "install": "~\\Downloads\\"
+    }
+]

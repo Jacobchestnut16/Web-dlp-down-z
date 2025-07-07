@@ -35,12 +35,45 @@
   <tr>
     <td><a href="/edit/playlist.json">Edit Playlists</a></td>
     <td><a href="/edit/download.json">Edit Downloads</a></td>
+
+    {% for entry in funfiles %}
+      <td><a href="/edit/{{entry.file}}-{{entry.type}}.json">Edit {{(entry.file)}} {{entry.type}}s</a></td>
+    {% endfor %}
+      <td><a href="/create-file">New</a></td>
   </tr>
 </table>
 </nav>
 
-<h1>Edit</h1>
+<h1>Edit
+    {% if where %}
+    {{(where.split('.'))[0].capitalize()}} {% if type != None %}{{type}}s{% endif %}
+    {% endif %}
+</h1>
 
+{% if type == "playlist" %}
+
+<form action="/save/installs" method="post">
+    <input type="hidden" name="file" value="{{where}}">
+    <label>Installs to: </label>
+    <select name="install" id="">
+        <option value="{{install}}">{{install[:-5]}}</option>
+        <option value="download.json">download</option>
+        {% for entry in installOpts %}
+            <option value="{{entry}}-download.json">{{entry}}</option>
+        {% endfor %}
+    </select>
+    <button type="submit">Save</button>
+</form>
+
+{% elif type == "download" %}
+<form action="/save/installs" method="post">
+    <input type="hidden" name="file" value="{{where}}">
+    <label>Installs to: </label>
+    <input type="text" name="install" value="{{install}}">
+    <button type="submit">Save</button>
+</form>
+
+{% endif %}
 
 {% if where %}
 <form method="post" action="/save">
