@@ -133,6 +133,18 @@ div > input[type="text"] {
   margin-right: 10px;
 }
 
+.thumbnail, .thumb {
+  max-width: 150px;
+  display: block;
+}
+
+.thumbnail img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+
 /* Responsive tweak */
 @media (max-width: 600px) {
   nav table, table {

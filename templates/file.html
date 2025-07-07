@@ -70,6 +70,7 @@
     <tr><td><h2 style="text-wrap: nowrap">{{where}} Items:</h2></td></tr>
         <tr>
             <th></th>
+            <th>Thumbnail</th>
             <th>Filename</th>
             <th>Website</th>
             <th>Actions</th>
@@ -79,6 +80,16 @@
         {% for entry in entries %}
             <tr>
                 <td class="drag-handle">☰</td>
+                <td>
+                    <img class="thumb" src="{{ url_for('static', filename='thumb/' + entry.filename + '.png') }}" alt="Thumbnail">
+                    <img class="thumb" src="{{ url_for('static', filename='thumb/' + entry.filename + '.jpg') }}" alt="Thumbnail">
+                    <img class="thumb" src="{{ url_for('static', filename='thumb/' + entry.filename + '.jpeg') }}" alt="Thumbnail">
+
+                    <picture class="thumbnail">
+                      <source srcset="{{ url_for('static', filename='thumb/' + entry.filename + '.webp') }}" type="image/webp">
+                      <img class="thumb" src="{{ url_for('static', filename='thumb/' + entry.filename + '.jpg') }}" alt="Thumbnail" style="width: 100%; height: auto;">
+                    </picture>
+                </td>
                 <td><input type="text" name="filename" value="{{ entry.filename }}"></td>
                 <td><input type="text" name="website" value="{{ entry.website }}"></td>
                 <td><button type="button" onclick="removeEntry(this)">Remove</button></td>
@@ -94,6 +105,14 @@
 {% endif %}
 
 <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const thumbs = document.querySelectorAll('img.thumb');
+    thumbs.forEach(img => {
+      img.onerror = () => {
+        img.style.display = 'none';
+      };
+    });
+  });
     new Sortable(document.getElementById('sortable-table'), {
         animation: 150,
         ghostClass: 'sortable-ghost',

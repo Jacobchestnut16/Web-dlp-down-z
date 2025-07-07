@@ -66,11 +66,102 @@ def save():
     else:
         if file == CONFIG_FILE:
             return redirect(url_for('setConfigSettings'))
+        elif file == DOWNLOAD_FILE:
+            return redirect(url_for('run_thumbnail_generator'))
         return redirect(url_for('edit', file=file, mark="Saved"))  # or back to 'edit' if that’s the page
+
+@app.route('/run/thumbnail-generator')
+def run_thumbnail_generator():
+    return render_template('thumb.html')
 
 @app.route('/execute')
 def execute_index():
     return render_template('execute.html')
+
+@app.route('/execute/thumbnail')
+def execute_thumbnail():
+
+    with open(DOWNLOAD_FILE, 'r', encoding='utf-8') as f:
+        lines = [line.strip() for line in f if line.strip()]
+        total = len(lines) + 1
+        count = 1
+    ansi_escape = re.compile(r'\x1b\[[0-9;]*m')
+    def generate():
+        messages = queue.Queue()
+
+        yield "data: Finding thumbnails...\n\n"
+
+        try:
+            with open(DOWNLOAD_FILE, 'r', encoding='utf-8') as f:
+                lines = [line.strip() for line in f if line.strip()]
+
+            while lines:
+                line = lines.pop(0)
+                parts = line.strip().rsplit(' ', 1)  # Split into max 2 parts from the right
+
+                if len(parts) == 2:
+                    name, url = parts[0], parts[1]
+                else:
+                    name = "unnamed"
+                    url = parts[0]
+                current_index = total - len(lines)
+
+                # Progress hook to receive download updates
+                def progress_hook(d):
+                    if d['status'] == 'downloading':
+                        percent = ansi_escape.sub('', d.get('_percent_str', '').strip())
+                        speed = ansi_escape.sub('', d.get('_speed_str', '').strip())
+                        eta = ansi_escape.sub('', d.get('_eta_str', '').strip())
+
+                        messages.put(f"data: Downloading: {percent} at {speed}, ETA {eta} [{current_index}/{total}]\n\n")
+                    elif d['status'] == 'finished':
+                        messages.put(f"data: ✅ Download complete: {d['filename']}\n\n")
+                    elif d['status'] == 'error':
+                        messages.put("data: ❌ Download failed.\n\n")
+
+                tmp_dir = os.path.join(".", "static", "thumb")
+                os.makedirs(tmp_dir, exist_ok=True)
+
+                # Build the output template path safely
+                out_path = os.path.join(tmp_dir, f"{name}.%(ext)s")
+                ydl_opts = {
+                    'skip_download': True,
+                    'writethumbnail': True,
+                    'convert_thumbnails': 'jpg',
+                    'outtmpl': f'{out_path}',
+                    'quiet': False
+                }
+
+                yield f"data: ▶️ Downloading ({current_index}/{total}): {name}, {url}\n\n"
+
+                try:
+                    def download_and_drain():
+                        with YoutubeDL(ydl_opts) as ydl:
+                            ydl.download([url])
+                        # Signal end
+                        messages.put("done")
+
+                    # Start download in a thread to allow streaming progress
+                    thread = threading.Thread(target=download_and_drain)
+                    thread.start()
+
+                    # Stream messages from queue in real-time
+                    while True:
+                        msg = messages.get()
+                        if msg == "done":
+                            break
+                        yield msg
+
+                except Exception as ve:
+                    yield f"data: ❌ Error processing {name},{url}: {str(ve).splitlines()[0]}\n\n"
+
+        except Exception as ve:
+            yield f"data: 🚫 Fatal error: {str(ve)}\n\n"
+
+        yield "data: ✅ Done.\n\n"
+
+    return Response(stream_with_context(generate()), content_type='text/event-stream')
+
 
 @app.route('/execute/playlist')
 def execute_playlist():
@@ -170,9 +261,13 @@ def execute_download():
 
             while lines:
                 line = lines.pop(0)
-                parts = line.strip().split(' ')
-                url = parts[-1]
-                name = parts[0] if len(parts) > 1 else "unnamed"
+                parts = line.strip().rsplit(' ', 1)  # Split into max 2 parts from the right
+
+                if len(parts) == 2:
+                    name, url = parts[0], parts[1]
+                else:
+                    name = "unnamed"
+                    url = parts[0]
                 current_index = total - len(lines)
 
                 # Progress hook to receive download updates

@@ -73,6 +73,14 @@ The `view` section contains log files for both playlist and individual downloads
 
 ---
 
+## Whats New v1.1.0:
+
+- Thumbnail images
+- Json file format over the previous txt
+- 
+
+---
+
 ## 📌 Requirements
 
 - [yt-dlp](https://github.com/yt-dlp/yt-dlp)
