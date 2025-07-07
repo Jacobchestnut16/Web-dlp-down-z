@@ -3,6 +3,9 @@ import time
 import queue
 import threading
 import re
+import logging
+import json
+import datetime
 from urllib.parse import urlparse
 from flask import Flask, render_template, url_for, request, redirect, Response, stream_with_context
 from yt_dlp import YoutubeDL
@@ -14,7 +17,7 @@ PLAYLIST_FILE = 'playlist.txt'
 PLAYLIST_PROCESS_FILE = 'playlist_processed.txt'
 DOWNLOAD_FILE = 'download.txt'
 PROCESS_FILE = 'process.txt'
-CONFIG_FILE = 'config.txt'
+CONFIG_FILE = 'config.json'
 DOWNLOAD_DIR = '~/Downloads'
 
 
@@ -37,6 +40,12 @@ def edit_index():
     return render_template('file.html')
 @app.route('/edit/<file>', methods=['GET', 'POST'])
 def edit(file):
+#     playlist_entries = json.load(f)
+#
+#
+# for entry in playlist_entries:
+#     filename = entry['filename']
+#     website = entry['website']
     with open(file, 'r') as f:
         lines = [line.strip() for line in f if line.strip()]
         entries = []
@@ -56,6 +65,12 @@ def save():
     websites = request.form.getlist('website')
     file = request.form.get('file')
 
+    if file == CONFIG_FILE:
+        data = dict(zip(filenames, websites))
+        with open(CONFIG_FILE, 'w') as f:
+            json.dump(data, f, indent=4)
+        return redirect(url_for('setConfigSettings'))
+
     try:
         with open(file, 'w', encoding='utf-8') as f:
             for name, site in zip(filenames, websites):
@@ -64,9 +79,7 @@ def save():
     except Exception as e:
         return f"Error: {e}"
     else:
-        if file == CONFIG_FILE:
-            return redirect(url_for('setConfigSettings'))
-        elif file == DOWNLOAD_FILE:
+        if file == DOWNLOAD_FILE:
             return redirect(url_for('run_thumbnail_generator'))
         return redirect(url_for('edit', file=file, mark="Saved"))  # or back to 'edit' if that’s the page
 
@@ -76,7 +89,7 @@ def run_thumbnail_generator():
 
 @app.route('/execute')
 def execute_index():
-    return render_template('execute.html')
+    return render_template('execute.html', download_dir=DOWNLOAD_DIR)
 
 @app.route('/execute/thumbnail')
 def execute_thumbnail():
@@ -106,6 +119,18 @@ def execute_thumbnail():
                     url = parts[0]
                 current_index = total - len(lines)
 
+                def find_file_without_ext(directory, filename_without_ext):
+                    for root, dirs, files in os.walk(directory):
+                        for file in files:
+                            name, ext = os.path.splitext(file)
+                            if name == filename_without_ext:
+                                return os.path.join(root, file)
+                    return None
+
+                if find_file_without_ext('static/thumb', name):
+                    yield f"data: ▶️ Skipping already known ({current_index}/{total}): {name}, {url}\n\n"
+                    continue
+
                 # Progress hook to receive download updates
                 def progress_hook(d):
                     if d['status'] == 'downloading':
@@ -129,7 +154,8 @@ def execute_thumbnail():
                     'writethumbnail': True,
                     'convert_thumbnails': 'jpg',
                     'outtmpl': f'{out_path}',
-                    'quiet': False
+                    'quiet': False,
+                    'progress_hooks': [progress_hook]
                 }
 
                 yield f"data: ▶️ Downloading ({current_index}/{total}): {name}, {url}\n\n"
@@ -212,7 +238,9 @@ def execute_playlist():
 
                                 # Save it
                                 with open(DOWNLOAD_FILE, 'a', encoding='utf-8') as out:
-                                    out.write(f"{video_title} {full_url}\n")
+                                    time = datetime.datetime.now()
+                                    time = time.strftime('%Y-%m-%d %H:%M')
+                                    out.write(f"{time} {video_title} {full_url}\n")
 
                                 yield f"data: ✅ Added: {video_title}\n\n"
 
@@ -312,7 +340,9 @@ def execute_download():
                         yield msg
 
                     with open(PROCESS_FILE, 'a', encoding='utf-8') as out:
-                        out.write(f'{name} {url}\n')
+                        time = datetime.datetime.now()
+                        time = time.strftime('%Y-%m-%d %H:%M')
+                        out.write(f"{time} {name} {url}\n")
 
                     # Remove the finished URL from the list
                     with open(DOWNLOAD_FILE, 'w', encoding='utf-8') as f:
@@ -333,104 +363,98 @@ def execute_download():
 
 @app.route('/config')
 def config():
+    entries = []
     with open(CONFIG_FILE, 'r') as f:
-        lines = [line.strip() for line in f if line.strip()]
-        entries = []
-        for line in lines:
-            parts = line.rsplit("'")
-            if len(parts) == 2:
-                filename, website = parts
-                entries.append({'filename': filename, 'website': website})
-            else:
-                # If there's a malformed line, skip or handle it
-                entries.append({'filename': parts[0], 'website': ''})
+        config = json.load(f)
+    for key, value in config.items():
+        print(key, value)
+        entries.append({'filename': key, 'website': value})
     return render_template('config.html', entries=entries, where='config')
 
 @app.route('/setConfigSettings')
 def setConfigSettings():
-    with open('config.txt', 'r', encoding='utf-8') as f:
-        try:
-            rnf = f.readline().split("'")
-            DOWNLOAD_DIR = os.path.normpath(rnf[1].strip())
-            DOWNLOAD_DIR = DOWNLOAD_DIR + os.sep if not DOWNLOAD_DIR.endswith(os.sep) else DOWNLOAD_DIR
-        except Exception:
-            DOWNLOAD_DIR = os.path.normpath(DOWNLOAD_DIR)
+    global DOWNLOAD_DIR, DOWNLOAD_FILE, PROCESS_FILE, DOWNLOAD_FILE, PROCESS_FILE
+    with open('config.json', 'r', encoding='utf-8') as f:
+        config = json.load(f)
+    logfile = config['web-dlp-down-z Log file']
+    logging.basicConfig(filename=logfile, level=logging.DEBUG)
+    logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 
-        try:
-            rng = f.readline().split("'")
-            DOWNLOAD_FILE = os.path.normpath(rnf[1].strip())
-        except Exception:
-            DOWNLOAD_FILE = os.path.normpath(DOWNLOAD_FILE)
-
-        try:
-            rnh = f.readline().split("'")
-            PLAYLIST_FILE = os.path.normpath(rnf[1].strip())
-        except Exception:
-            PLAYLIST_FILE = os.path.normpath(DOWNLOAD_FILE)
-
-        rni = f.readline().split("'")
-        rnj = f.readline().split("'")
-
-        try:
-            rnk = f.readline().split("'")
-            PROCESS_FILE = os.path.normpath(rnf[1].strip())
-        except Exception:
-            PROCESS_FILE = os.path.normpath(DOWNLOAD_FILE)
-
-        try:
-            rnl = f.readline().split("'")
-            PROCESS_DIR = os.path.normpath(rnf[1].strip())
-        except Exception:
-            PROCESS_DIR = os.path.normpath(DOWNLOAD_FILE)
+    logging.info(f"web setConfigSettings: running")
+    try:
+        DOWNLOAD_DIR = os.path.normpath(config['Download To'])
+        logging.info(f"web setConfigSettings: Download Dir {DOWNLOAD_DIR}")
+    except Exception as e:
+        logging.error(f"web setConfigSettings: could not open Download Dir: {str(e)}")
+    try:
+        DOWNLOAD_FILE = os.path.normpath(config['Download File'])
+        logging.info(f"web setConfigSettings: Download File {DOWNLOAD_FILE}")
+    except Exception as e:
+        logging.error(f"web setConfigSettings: could not open Download File: {str(e)}")
+    try:
+        PLAYLIST_FILE = os.path.normpath(config['Playlist File'])
+        logging.info(f"web setConfigSettings: Playlist File {PLAYLIST_FILE}")
+    except Exception as e:
+        logging.error(f"web setConfigSettings: could not open Playlist File: {str(e)}")
+    try:
+        PROCESS_FILE = os.path.normpath(config['Process'])
+        logging.info(f"web setConfigSettings: Process File {PROCESS_FILE}")
+    except Exception as e:
+        logging.error(f"web setConfigSettings: could not open Process File: {str(e)}")
+    try:
+        PLAYLIST_PROCESS_FILE = os.path.normpath(config['Playlist Processed'])
+        logging.info(f"web setConfigSettings: Playlist Processed File {PLAYLIST_PROCESS_FILE}")
+    except Exception as e:
+        logging.error(f"web setConfigSettings: could not open Playlist Processed File: {str(e)}")
     return redirect(url_for('config'))
 
 def configBackground():
-    with open('config.txt', 'r', encoding='utf-8') as f:
-        try:
-            rnf = f.readline().split("'")
-            DOWNLOAD_DIR = os.path.normpath(rnf[1].strip())
-            DOWNLOAD_DIR = DOWNLOAD_DIR + os.sep if not DOWNLOAD_DIR.endswith(os.sep) else DOWNLOAD_DIR
-        except Exception:
-            DOWNLOAD_DIR = os.path.normpath(DOWNLOAD_DIR)
+    global DOWNLOAD_DIR, DOWNLOAD_FILE, PROCESS_FILE, DOWNLOAD_FILE, PROCESS_FILE
+    with open('config.json', 'r', encoding='utf-8') as f:
+        config = json.load(f)
+    logfile = config['web-dlp-down-z Log file']
+    logging.basicConfig(filename=logfile, level=logging.DEBUG)
+    logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 
-        try:
-            rng = f.readline().split("'")
-            DOWNLOAD_FILE = os.path.normpath(rnf[1].strip())
-        except Exception:
-            DOWNLOAD_FILE = os.path.normpath(DOWNLOAD_FILE)
-
-        try:
-            rnh = f.readline().split("'")
-            PLAYLIST_FILE = os.path.normpath(rnf[1].strip())
-        except Exception:
-            PLAYLIST_FILE = os.path.normpath(DOWNLOAD_FILE)
-
-
-        rni = f.readline().split("'")
-        rnj = f.readline().split("'")
-
-        try:
-            rnk = f.readline().split("'")
-            PROCESS_FILE = os.path.normpath(rnf[1].strip())
-        except Exception:
-            PROCESS_FILE = os.path.normpath(DOWNLOAD_FILE)
-
-        try:
-            rnl = f.readline().split("'")
-            PROCESS_DIR = os.path.normpath(rnf[1].strip())
-        except Exception:
-            PROCESS_DIR = os.path.normpath(DOWNLOAD_FILE)
+    logging.info(f"configBackground: running")
+    try:
+        DOWNLOAD_DIR = os.path.normpath(config['Download To'])
+        logging.info(f"configBackground: Download Dir {DOWNLOAD_DIR}")
+    except Exception as e:
+        logging.error(f"configBackground: could not open Download Dir: {str(e)}")
+    try:
+        DOWNLOAD_FILE = os.path.normpath(config['Download File'])
+        logging.info(f"configBackground: Download File {DOWNLOAD_FILE}")
+    except Exception as e:
+        logging.error(f"configBackground: could not open Download File: {str(e)}")
+    try:
+        PLAYLIST_FILE = os.path.normpath(config['Playlist File'])
+        logging.info(f"configBackground: Playlist File {PLAYLIST_FILE}")
+    except Exception as e:
+        logging.error(f"configBackground: could not open Playlist File: {str(e)}")
+    try:
+        PROCESS_FILE = os.path.normpath(config['Process'])
+        logging.info(f"configBackground: Process File {PROCESS_FILE}")
+    except Exception as e:
+        logging.error(f"configBackground: could not open Process File: {str(e)}")
+    try:
+        PLAYLIST_PROCESS_FILE = os.path.normpath(config['Playlist Processed'])
+        logging.info(f"configBackground: Playlist Processed File {PLAYLIST_PROCESS_FILE}")
+    except Exception as e:
+        logging.error(f"configBackground: could not open Playlist Processed File: {str(e)}")
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.INFO)
     try:
-        with open('config.txt', 'x', encoding='utf-8') as f:
-            f.write('''Download To  ' ~/Downloads
-            Download File  ' download.txt
-            Playlist File  ' playlist.txt
-            Download full log ' log_download.txt
-            Playlist full log ' log_download.txt
-            Process (do not change) ' process.txt
-            Playlist Processed (do not change) ' playlist_processed.txt
+        with open('config.json', 'x', encoding='utf-8') as f:
+            f.write('''"web-dlp-down-z Log file": "logs",
+            "Download To": "~/Downloads",
+            "Download File": "download.txt",
+            "Playlist File": "playlist.txt",
+            "Download full log": "log_download.txt",
+            "Playlist full log": "log_download.txt",
+            "Process": "process.txt",
+            "Playlist Processed": "playlist_processed.txt"
             ''')
     except FileExistsError:
         pass

@@ -6,9 +6,26 @@
 </head>
 <body>
 
+<nav>
+<table>
+  <tr>
+    <td>
+      <a href="/edit">Edit</a>
+    </td>
+    <td>
+      <a href="/view">View</a>
+    </td>
+    <td>
+      <a href="/execute">Execute</a>
+    </td>
+      <td>
+          <a href="/config">Config</a>
+      </td>
+  </tr>
+</table>
+</nav>
 
 
-<pre id="log" style="white-space: pre-wrap;"></pre>
 <h1>Executing</h1>
 <div id="progress-container">
     <div id="progress-bar">
@@ -16,6 +33,8 @@
     </div>
     <div id="progress-text">Waiting for download to start...</div>
 </div>
+<pre id="log" style="white-space: pre-wrap;"></pre>
+
 
 <script>
   const eventSource = new EventSource("/execute/thumbnail");

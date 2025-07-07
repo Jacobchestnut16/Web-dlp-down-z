@@ -36,7 +36,7 @@
 
 {% if where %}
 <form method="post" action="/save">
-  <input type="hidden" name="file" value="{{where}}.txt">
+  <input type="hidden" name="file" value="{{where}}.json">
 
     <table id="entries-list">
     <thead>
@@ -49,7 +49,7 @@
     <tbody id="sortable-table">
         {% for entry in entries %}
             <tr>
-                <td><input class="item" type="text" name="filename" value="{{ entry.filename }} '" readonly></td>
+                <td><input class="item" type="text" name="filename" value="{{ entry.filename }}" readonly></td>
                 <td><input type="text" name="website" value="{{ entry.website }}"></td>
             </tr>
         {% endfor %}
