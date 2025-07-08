@@ -43,7 +43,7 @@
     </table>
 </nav>
 {% if download_dir %}
-<h2>Download Directory: {{download_dir}}</h2>
+<h2 id="download_dir">Download Directory: {{download_dir}}</h2>
 {% endif %}
 
 <h1>Executing</h1>
@@ -156,6 +156,9 @@
                 progressFill.style.width = percent + "%";
                 // progressText.textContent = `[${"█".repeat(Math.floor(percent / 5)).padEnd(20, "░")}] ${percent.toFixed(1)}% — ETA ${eta}`;
                 progressText.textContent = `${percent.toFixed(1)}% — ETA ${eta}`;
+            } else if (msg.startsWith('Download_dir')){
+                const dir = msg.split('^')
+                document.getElementById('download_dir').innerText = "Download Directory: "+dir[1]
             } else {
                 logElement.textContent += msg + "\n";
                 logElement.scrollTop = logElement.scrollHeight;

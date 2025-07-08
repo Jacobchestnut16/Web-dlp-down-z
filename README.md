@@ -82,6 +82,7 @@ The `view` section contains log files for both playlist and individual downloads
 - Supports individual and playlist-based downloads
 - Reorderable queue system
 - Automatic file naming from source titles
+- Automatic metadata generation if provided by the source
 - Logs for tracking success/failure and recovery
 - Cross-platform support (Windows, Linux, macOS)
 
@@ -90,10 +91,6 @@ The `view` section contains log files for both playlist and individual downloads
 ## Whats New v1.2.5:
 
 - Many playlists and Download files
-  - This will be fully supported in v1.2.5
-  - Creating and saving links ADDED
-  - Execute custom playlists ADDED
-  - Execute custom download support NOT SUPPORTED
 
 ---
 

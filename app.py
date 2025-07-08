@@ -103,6 +103,9 @@ def edit(file):
 def save_installs():
     if request.method == 'POST':
         install = request.form['install']
+        install = os.path.normpath(install)
+        if not install.endswith(os.path.sep):
+            install += os.path.sep
         where = request.form['file']
         name = (where.split('-'))[0]
         type = ((where.split('-'))[1].split('.'))[0]
@@ -587,7 +590,109 @@ def execute_download():
 
     return Response(stream_with_context(generate()), content_type='text/event-stream')
 
+@app.route('/execute/download/<file>')
+def execute_download_file(file):
+    logging.basicConfig(level=logging.DEBUG)
+    ansi_escape = re.compile(r'\x1b\[[0-9;]*m')
 
+    file_name = (file.split('-')[0])
+    file_type = ((file.split('-')[1]).split('.'))[0]
+    with open(FILE_CONFIG, 'r', encoding='utf-8') as f:
+        files = json.load(f)
+    for filef in files:
+        if filef['file'] == file_name and file_type == filef['type']:
+            download_to = filef['install']
+            download_to = os.path.normpath(download_to)
+            if not download_to.endswith(os.path.sep):
+                download_to += os.path.sep
+            try:
+                os.makedirs(os.path.dirname(download_to), exist_ok=True)
+            except OSError as err:
+                print(f"data: Error: {str(err)}\n\n")
+
+    def generate(download_file):
+        messages = queue.Queue()
+        yield f"data: Download_dir ^{download_to}\n\n"
+
+        yield "data: Starting Downloading process...\n\n"
+        logging.info("data: Downloading started")
+        try:
+            with open(download_file, 'r', encoding='utf-8') as f:
+                download_json = json.load(f)
+
+            total = len(download_json)
+            current_index = 0
+
+            # Step 2: Process each line one by one
+            for file in download_json:
+                download_json.pop(0)
+                current_index += 1
+                url = file["url"]  # filename URL
+                name = file["file"] if file["file"] else "unnamed"
+
+                # Progress hook to receive download updates
+                def progress_hook(d):
+                    if d['status'] == 'downloading':
+                        percent = ansi_escape.sub('', d.get('_percent_str', '').strip())
+                        speed = ansi_escape.sub('', d.get('_speed_str', '').strip())
+                        eta = ansi_escape.sub('', d.get('_eta_str', '').strip())
+
+                        messages.put(f"data: Downloading: {percent} at {speed}, ETA {eta} [{current_index}/{total}]\n\n")
+                    elif d['status'] == 'finished':
+                        messages.put(f"data: ✅ Download complete: {d['filename']}\n\n")
+                    elif d['status'] == 'error':
+                        messages.put("data: ❌ Download failed.\n\n")
+
+                ydl_opts = {
+                    'format': 'best',
+                    'outtmpl': f'{download_to}%(title)s.%(ext)s',
+                    'postprocessors': [{'key': 'FFmpegMetadata'}],
+                    'addmetadata': True,
+                    'progress_hooks': [progress_hook],  # ✅ This is critical!
+                }
+
+                yield f"data: ▶️ Downloading ({current_index}/{total}): {name}, {url}\n\n"
+                logging.info(f"data: Downloading ({current_index}/{total}): {name}, {url}")
+
+                try:
+                    def download_and_drain():
+                        with YoutubeDL(ydl_opts) as ydl:
+                            ydl.download([url])
+                        # Signal end
+                        messages.put("done")
+
+                    # Start download in a thread to allow streaming progress
+                    thread = threading.Thread(target=download_and_drain)
+                    thread.start()
+
+                    # Stream messages from queue in real-time
+                    while True:
+                        msg = messages.get()
+                        if msg == "done":
+                            break
+                        yield msg
+
+                    with open(PROCESS_FILE, 'a', encoding='utf-8') as out:
+                        time = datetime.datetime.now()
+                        time = time.strftime('%Y-%m-%d %H:%M')
+                        out.write(f"{time} {name} {url}\n")
+
+                    # Remove the finished URL from the list
+                    with open(download_file, 'w', encoding='utf-8') as f:
+                        json.dump(download_json, f, indent=4)
+
+                except Exception as ve:
+                    yield f"data: ❌ Error processing {name},{url}: {str(ve).splitlines()[0]}\n\n"
+                    logging.error(f"data: Error processing {name},{url}: {str(ve).splitlines()[0]}")
+
+        except Exception as ve:
+            yield f"data: 🚫 Fatal error: {str(ve)}\n\n"
+            logging.error(f"data: Fatal error: {str(ve)}")
+
+        yield "data: ✅ Done.\n\n"
+        logging.info("data: Done.")
+
+    return Response(stream_with_context(generate(file)), content_type='text/event-stream')
 
 @app.route('/config')
 def config():
