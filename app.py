@@ -79,6 +79,8 @@ def edit(file):
     except Exception as e:
         named = None
 
+    install = None
+
     with open(FILE_CONFIG, 'r', encoding='utf-8') as f:
         files = json.load(f)
         for item in files:
@@ -87,7 +89,6 @@ def edit(file):
                 install = item['install']
                 print("TYPE LOADED:", type)
             funfiles.append({'type': item['type'], 'file': item['file'], 'install': item['install']})
-
     installOpts = []
     if type == 'playlist':
         with open(FILE_CONFIG, 'r', encoding='utf-8') as f:
