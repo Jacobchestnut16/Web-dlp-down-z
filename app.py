@@ -164,11 +164,14 @@ def group_action():
     def save(file, websites, filenames):
         try:
             entries = []
+            seen_urls = set()
             for name, site in zip(filenames, websites):
-                entries.append({
-                    'file': name,
-                    'url': site
-                })
+                if site not in seen_urls:
+                    entries.append({
+                        'file': name,
+                        'url': site
+                    })
+                    seen_urls.add(site)
 
             with open(file, 'w', encoding='utf-8') as f:
                 json.dump(entries, f, indent=4)
@@ -383,7 +386,7 @@ def execute_playlist():
                                     last_segment = parsed.path.rstrip('/').split('/')[-1] or 'untitled'
                                     video_title = last_segment
 
-                                # Save it
+
                                 if os.path.exists(DOWNLOAD_FILE):
                                     with open(DOWNLOAD_FILE, 'r', encoding='utf-8') as f:
                                         try:
@@ -393,11 +396,15 @@ def execute_playlist():
                                         except json.JSONDecodeError:
                                             entries = []
 
+                                existing_urls = {entry.get('url') for entry in entries}
+
                                     # Step 2: Append new entry
-                                entries.append({
-                                    "file": video_title,
-                                    "url": full_url
-                                })
+                                if full_url not in existing_urls:
+                                    entries.append({
+                                        "file": video_title,
+                                        "url": full_url
+                                    })
+                                    existing_urls.add(full_url)
 
                                 # Step 3: Write updated list back to file
                                 with open(DOWNLOAD_FILE, 'w', encoding='utf-8') as f:
@@ -502,11 +509,15 @@ def execute_playlist_file(file):
                                         except json.JSONDecodeError:
                                             entries = []
 
+                                existing_urls = {entry.get('url') for entry in entries}
+
                                     # Step 2: Append new entry
-                                entries.append({
-                                    "file": video_title,
-                                    "url": full_url
-                                })
+                                if full_url not in existing_urls:
+                                    entries.append({
+                                        "file": video_title,
+                                        "url": full_url
+                                    })
+                                    existing_urls.add(full_url)
 
                                 # Step 3: Write updated list back to file
                                 with open(download_to, 'w', encoding='utf-8') as f:
