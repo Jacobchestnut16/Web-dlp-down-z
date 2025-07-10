@@ -869,10 +869,13 @@ def legacy_read(upgrade_needed):
                 SYSTEM_SET[1]['legacy-read'].remove(upgrade_needed)
             except Exception as e:
                 logging.error(f"UPGRADING: ERROR COULD NOT UPGRADE: {str(e)}")
-    if len(SYSTEM_SET[1]['legacy-read']) == 0:
-        SYSTEM_SET = SYSTEM_SET.pop()
-        with open(SYSTEM_CONFIG, 'w', encoding='utf-8') as f:
-            json.dump(SYSTEM_SET, f, indent=4)
+    filtered_data = []
+    for entry in SYSTEM_SET:
+        if 'UPDATE' in entry and entry.get('legacy-read') == []:
+            continue  # Skip this entry
+        filtered_data.append(entry)
+    with open(SYSTEM_CONFIG, 'w', encoding='utf-8') as f:
+        json.dump(filtered_data, f, indent=4)
 
 
 
