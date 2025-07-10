@@ -602,7 +602,8 @@ def execute_download():
                     'outtmpl': f'{DOWNLOAD_DIR}%(title)s.%(ext)s',
                     'postprocessors': [{'key': 'FFmpegMetadata'}],
                     'addmetadata': True,
-                    'progress_hooks': [progress_hook],  # ✅ This is critical!
+                    'progress_hooks': [progress_hook],
+                    'ignoreerrors': True
                 }
 
                 yield f"data: ▶️ Downloading ({current_index}/{total}): {name}, {url}\n\n"
@@ -706,7 +707,8 @@ def execute_download_file(file):
                     'outtmpl': f'{download_to}%(title)s.%(ext)s',
                     'postprocessors': [{'key': 'FFmpegMetadata'}],
                     'addmetadata': True,
-                    'progress_hooks': [progress_hook],  # ✅ This is critical!
+                    'progress_hooks': [progress_hook],
+                    'ignoreerrors': True
                 }
 
                 yield f"data: ▶️ Downloading ({current_index}/{total}): {name}, {url}\n\n"
