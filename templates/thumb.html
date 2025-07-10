@@ -31,9 +31,7 @@
     </div>
     <div id="progress-text">Waiting for download to start...</div>
 </div>
-<pre id="log" style="white-space: pre-wrap;"></pre>
-
-<div id="file" style="display: none">{{file}}</div>
+<pre id="log"></pre>
 
 
 <script>
@@ -43,48 +41,40 @@
     const progressFill = document.getElementById("progress-fill");
     const progressText = document.getElementById("progress-text");
 
-    eventSource.onmessage = function(event) {
-        console.log("SSE:", event.data);
+        eventSource.onmessage = function (event) {
+            const msg = event.data;
 
-        // Append log messages to a container (optional)
-        const log = document.getElementById("log");
-        log.innerText += event.data + "\n";
+            if (msg.startsWith("Downloading:")) {
+                // Example msg: Downloading: 30.5% at 370KiB/s, ETA 01:34
+                const percentMatch = msg.match(/Downloading:\s*([\d.]+)%/);
+                const etaMatch = msg.match(/ETA\s+(\S+)/);
 
-        // Redirect when done
-        if (event.data.includes("✅ Done.")) {
-            eventSource.close(); // stop listening
-            window.location.href = "/edit/{{file}}"; // <-- change to desired endpoint
-        };
+                const percent = percentMatch ? parseFloat(percentMatch[1]) : 0;
+                const eta = etaMatch ? etaMatch[1] : "unknown";
 
-        const msg = event.data;
+                progressFill.style.width = percent + "%";
+                // progressText.textContent = `[${"█".repeat(Math.floor(percent / 5)).padEnd(20, "░")}] ${percent.toFixed(1)}% — ETA ${eta}`;
+                progressText.textContent = `${percent.toFixed(1)}% — ETA ${eta}`;
+            } else {
+                if (event.data.startsWith("REDIRECT ")) {
+                    const targetUrl = event.data.replace("REDIRECT ", "").trim();
+                    eventSource.close();
+                    window.location.href = targetUrl;
+                }
+                logElement.textContent += msg + "\n";
+                logElement.scrollTop = logElement.scrollHeight;
 
-        if (msg.startsWith("Downloading:")) {
-            // Example msg: Downloading: 30.5% at 370KiB/s, ETA 01:34
-            const percentMatch = msg.match(/Downloading:\s*([\d.]+)%/);
-            const etaMatch = msg.match(/ETA\s+(\S+)/);
-
-            const percent = percentMatch ? parseFloat(percentMatch[1]) : 0;
-            const eta = etaMatch ? etaMatch[1] : "unknown";
-
-            progressFill.style.width = percent + "%";
-            // progressText.textContent = `[${"█".repeat(Math.floor(percent / 5)).padEnd(20, "░")}] ${percent.toFixed(1)}% — ETA ${eta}`;
-            progressText.textContent = `${percent.toFixed(1)}% — ETA ${eta}`;
-        } else {
-            logElement.textContent += msg + "\n";
-            logElement.scrollTop = logElement.scrollHeight;
-
-            if (msg.includes("✅ Done.") || msg.includes("Download complete")) {
-                progressText.textContent = "✅ Idle";
-                progressFill.style.width = "0%";
+                if (msg.includes("✅ Done.") || msg.includes("Download complete")) {
+                    progressText.textContent = "✅ Idle";
+                    progressFill.style.width = "0%";
+                }
             }
-        }
-
+        };
 
         eventSource.onerror = function () {
             logElement.textContent += "[Error receiving download updates]\n";
             eventSource.close();
         };
-    }
 </script>
 
 <style>
