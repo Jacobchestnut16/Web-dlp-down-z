@@ -722,11 +722,11 @@ def execute_download():
                     elif d['status'] == 'error':
                         messages.put("data: ❌ Download failed.\n\n")
                 ydl_opts = {
-                    'skip_download': True,
-                    'writethumbnail': True,
-                    'convert_thumbnails': 'jpg',
-                    'outtmpl': f'{DOWNLOAD_DIR}%(title).%(ext)s',
-                    'progress_hooks': [progress_hook]
+                    'format': 'best',
+                    'outtmpl': f'{download_to}%(title)s.%(ext)s',
+                    'postprocessors': [{'key': 'FFmpegMetadata'}],
+                    'addmetadata': True,
+                    'progress_hooks': [progress_hook],  # ✅ This is critical!
                 }
 
 
@@ -848,11 +848,11 @@ def execute_download_file(file):
                     else:
                         print(d["status"])
                 ydl_opts = {
-                    'skip_download': True,
-                    'writethumbnail': True,
-                    'convert_thumbnails': 'jpg',
+                    'format': 'best',
                     'outtmpl': f'{download_to}%(title)s.%(ext)s',
-                    'progress_hooks': [progress_hook]
+                    'postprocessors': [{'key': 'FFmpegMetadata'}],
+                    'addmetadata': True,
+                    'progress_hooks': [progress_hook],  # ✅ This is critical!
                 }
 
 
@@ -963,11 +963,11 @@ def execute_download_file(file):
                             print("STATUS:", d['status'])
 
                     ydl_opts = {
-                        'skip_download': True,
-                        'writethumbnail': True,
-                        'convert_thumbnails': 'jpg',
+                        'format': 'best',
                         'outtmpl': f'{download_to}%(title)s.%(ext)s',
-                        'progress_hooks': [progress_hook]
+                        'postprocessors': [{'key': 'FFmpegMetadata'}],
+                        'addmetadata': True,
+                        'progress_hooks': [progress_hook],  # ✅ This is critical!
                     }
 
                     try:
