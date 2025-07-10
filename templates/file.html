@@ -136,6 +136,7 @@
         <tr>
             <th></th>
             <th>Thumbnail</th>
+            <th>Duration</th>
             <th>Filename</th>
             <th>Website</th>
             <th>Actions</th>
@@ -149,12 +150,12 @@
                     <img class="thumb" src="{{ url_for('static', filename='thumb/' + entry.filename + '.png') }}" alt="Thumbnail">
                     <img class="thumb" src="{{ url_for('static', filename='thumb/' + entry.filename + '.jpg') }}" alt="Thumbnail">
                     <img class="thumb" src="{{ url_for('static', filename='thumb/' + entry.filename + '.jpeg') }}" alt="Thumbnail">
-
                     <picture class="thumbnail">
                       <source srcset="{{ url_for('static', filename='thumb/' + entry.filename + '.webp') }}" type="image/webp">
                       <img class="thumb" src="{{ url_for('static', filename='thumb/' + entry.filename + '.jpg') }}" alt="Thumbnail" style="width: 100%; height: auto;">
                     </picture>
                 </td>
+                <td>{{ entry.duration }}</td>
                 <td><input type="text" name="filename" value="{{ entry.filename }}"></td>
                 <td><input type="text" name="website" value="{{ entry.website }}"></td>
                 <td><button type="button" onclick="removeEntry(this)">Remove</button></td>

@@ -63,10 +63,13 @@ def edit(file):
                 for item in data:
                     filename = item.get('file', '').strip()
                     website = item.get('url', '').strip()
+                    duration = item.get('duration', '')
                     if filename:  # Only add if filename exists
                         entries.append({
                             'filename': filename,
-                            'website': website
+                            'website': website,
+                            'duration': duration,
+                            'description': item.get('description', '')
                         })
     except FileNotFoundError:
         print("default-playlist.json not found.")
@@ -280,6 +283,37 @@ def execute_thumbnail(file):
                             if name == filename_without_ext:
                                 return os.path.join(root, file)
                     return None
+
+                if not file.get("duration") or not file.get("description"):
+                    ydl_opts = {
+                        'skip_download': True,
+                        'quiet': True
+                    }
+                    with YoutubeDL(ydl_opts) as ydl:
+                        try:
+                            info = ydl.extract_info(url, download=False)
+                            duration = info.get('duration')
+                            description = info.get('description')
+                        except Exception:
+                            duration = 'PRIVATE VIDEO'
+                            description = ''
+
+                    with open(master_file, 'r', encoding='utf-8') as f:
+                        json_data = json.load(f)
+
+                    updated = False
+                    for entry in json_data:
+                        if entry.get("file") == name and entry.get("url") == url:
+                            entry["duration"] = duration
+                            entry["description"] = description
+                            updated = True
+                            print(f"✅ Set duration for: {entry['file']} — {duration} seconds")
+
+                    if updated:
+                        with open(master_file, 'w', encoding='utf-8') as f:
+                            json.dump(json_data, f, indent=4)
+                    else:
+                        print("⚠️ Matching entry not found in JSON. Nothing updated.")
 
                 if find_file_without_ext('static/thumb', name):
                     yield f"data: ▶️ Skipping already known ({current_index}/{total}): {name}, {url}\n\n"
@@ -500,10 +534,10 @@ def execute_playlist():
 
                         if '_type' in info and info['_type'] == 'playlist':
                             entries = info.get('entries', [])
-                            print(entries)
                             for entry in entries:
                                 video_title = entry.get('title', 'Unknown title')
                                 video_url = entry.get('url')
+                                duration = info.get("duration")
 
                                 if not video_url:
                                     yield f"data: ⚠️ Skipped video (missing URL): {video_title}\n\n"
@@ -532,7 +566,8 @@ def execute_playlist():
                                 if full_url not in existing_urls:
                                     entries.append({
                                         "file": video_title,
-                                        "url": full_url
+                                        "url": full_url,
+                                        "duration": duration
                                     })
                                     existing_urls.add(full_url)
 
@@ -615,6 +650,8 @@ def execute_playlist_file(file):
                             for entry in entries:
                                 video_title = entry.get('title', 'Unknown title')
                                 video_url = entry.get('url')
+                                duration = info.get("duration")
+                                description = info.get("description")
 
                                 if not video_url:
                                     yield f"data: ⚠️ Skipped video (missing URL): {video_title}\n\n"
@@ -645,7 +682,9 @@ def execute_playlist_file(file):
                                 if full_url not in existing_urls:
                                     entries.append({
                                         "file": video_title,
-                                        "url": full_url
+                                        "url": full_url,
+                                        "duration": duration,
+                                        "description": description
                                     })
                                     existing_urls.add(full_url)
 
