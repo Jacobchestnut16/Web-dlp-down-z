@@ -851,7 +851,7 @@ def execute_download_file(file):
                     'skip_download': True,
                     'writethumbnail': True,
                     'convert_thumbnails': 'jpg',
-                    'outtmpl': f'{download_to}%(title).%(ext)s',
+                    'outtmpl': f'{download_to}%(title)s.%(ext)s',
                     'progress_hooks': [progress_hook]
                 }
 
@@ -966,7 +966,7 @@ def execute_download_file(file):
                         'skip_download': True,
                         'writethumbnail': True,
                         'convert_thumbnails': 'jpg',
-                        'outtmpl': f'{download_to}%(title).%(ext)s',
+                        'outtmpl': f'{download_to}%(title)s.%(ext)s',
                         'progress_hooks': [progress_hook]
                     }
 
