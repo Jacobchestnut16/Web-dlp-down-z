@@ -239,14 +239,15 @@ def execute_installation(file):
 
 @app.route('/execute/thumbnail/<file>')
 def execute_thumbnail(file):
+    logging.basicConfig(level=logging.DEBUG)
     ansi_escape = re.compile(r'\x1b\[[0-9;]*m')
-    def generate(file):
+    def generate(master_file):
         messages = queue.Queue()
 
-        yield "data: Finding thumbnails...\n\n"
-
+        yield "data: Starting Downloading process...\n\n"
+        logging.info("data: Downloading started")
         try:
-            with open(file, 'r', encoding='utf-8') as f:
+            with open(master_file, 'r', encoding='utf-8') as f:
                 download_json = json.load(f)
 
             total = len(download_json)
@@ -294,11 +295,12 @@ def execute_thumbnail(file):
                     'writethumbnail': True,
                     'convert_thumbnails': 'jpg',
                     'outtmpl': f'{out_path}',
-                    'quiet': False,
-                    'progress_hooks': [progress_hook]
+                    'progress_hooks': [progress_hook],
+                    'ignoreerrors': True
                 }
 
                 yield f"data: ▶️ Downloading ({current_index}/{total}): {name}, {url}\n\n"
+                logging.info(f"data: Downloading ({current_index}/{total}): {name}, {url}")
 
                 try:
                     def download_and_drain():
@@ -308,8 +310,11 @@ def execute_thumbnail(file):
                         messages.put("done")
 
                     # Start download in a thread to allow streaming progress
-                    thread = threading.Thread(target=download_and_drain)
-                    thread.start()
+                    try:
+                        thread = threading.Thread(target=download_and_drain)
+                        thread.start()
+                    except Exception as e:
+                        yield f"data: ❌ Download failed.\n\n"
 
                     # Stream messages from queue in real-time
                     while True:
@@ -320,11 +325,14 @@ def execute_thumbnail(file):
 
                 except Exception as ve:
                     yield f"data: ❌ Error processing {name},{url}: {str(ve).splitlines()[0]}\n\n"
+                    logging.error(f"data: Error processing {name},{url}: {str(ve).splitlines()[0]}")
 
         except Exception as ve:
             yield f"data: 🚫 Fatal error: {str(ve)}\n\n"
+            logging.error(f"data: Fatal error: {str(ve)}")
 
         yield "data: ✅ Done.\n\n"
+        logging.info("data: Done.")
 
     return Response(stream_with_context(generate(file)), content_type='text/event-stream')
 
