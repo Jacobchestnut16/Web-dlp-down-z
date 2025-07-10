@@ -13,13 +13,14 @@ from yt_dlp import YoutubeDL
 
 app = Flask(__name__)
 
-PLAYLIST_FILE = 'playlist.json'
+PLAYLIST_FILE = 'default-playlist.json'
 PLAYLIST_PROCESS_FILE = 'playlist_processed.txt'
-DOWNLOAD_FILE = 'download.json'
+DOWNLOAD_FILE = 'default-download.json'
 PROCESS_FILE = 'process.txt'
 CONFIG_FILE = 'config.json'
 DOWNLOAD_DIR = '~/Downloads'
 FILE_CONFIG = 'file_config.json'
+SYSTEM_CONFIG = 'system_config.json'
 
 
 @app.route('/')
@@ -43,7 +44,7 @@ def edit_index():
     with open(FILE_CONFIG, 'r', encoding='utf-8') as f:
         files = json.load(f)
         for item in files:
-            funfiles.append({'type': item['type'], 'file': item['file'], 'install': item['install']})
+            funfiles.append({'file': item['file'], 'install-playlist': item['install-playlist'], 'install-directory': item['install-directory']})
 
     print("FILES LOADED:", funfiles)
     return render_template('file.html', funfiles=funfiles)
@@ -52,7 +53,6 @@ def edit(file):
 
     entries = []
     funfiles = []
-    type = None
 
     try:
         with open(file, 'r', encoding='utf-8') as f:
@@ -69,36 +69,40 @@ def edit(file):
                             'website': website
                         })
     except FileNotFoundError:
-        print("playlist.json not found.")
+        print("default-playlist.json not found.")
     except json.JSONDecodeError as e:
         print("JSON decode error:", e)
 
     try:
+        print("FILE LOADED:", file)
         named = (file.split('-'))[0]
         type = ((file.split('-'))[1].split('.'))[0]
     except Exception as e:
         named = None
+        type = None
 
     install = None
 
     with open(FILE_CONFIG, 'r', encoding='utf-8') as f:
         files = json.load(f)
         for item in files:
-            if named == item['file'] and item['type'] == type:
-                type = item['type']
-                install = item['install']
-                print("TYPE LOADED:", type)
-            funfiles.append({'type': item['type'], 'file': item['file'], 'install': item['install']})
+            if named == item['file']:
+                if type == 'download':
+                    install = item['install-directory']
+                elif type == 'playlist':
+                    install = item['install-playlist']
+                    install = install.split('-')[0]
+            funfiles.append({'file': item['file'], 'install-playlist': item['install-playlist'], 'install-directory': item['install-directory']})
     installOpts = []
     if type == 'playlist':
         with open(FILE_CONFIG, 'r', encoding='utf-8') as f:
             files = json.load(f)
             for item in files:
-                if item['type'] == 'download':
-                    installOpts.append(item['file'])
+                installOpts.append(item['file'])
 
 
-    return render_template('file.html', entries=entries, where=file, funfiles=funfiles, type=type, install=install, installOpts=installOpts)
+    return render_template('file.html', entries=entries, where=file, funfiles=funfiles, type=type,
+                           install=install, installOpts=installOpts, name=named)
 
 @app.route('/save/installs', methods=['POST'])
 def save_installs():
@@ -113,8 +117,11 @@ def save_installs():
         with open (FILE_CONFIG, 'r', encoding='utf-8') as f:
             config = json.load(f)
         for item in config:
-            if item['type'] == type and item['file'] == name:
-                item['install'] = install
+            if item['file'] == name:
+                if type == 'download':
+                    item['install-download'] = install
+                elif type == 'playlist':
+                    item['install-playlist'] = install
         with open(FILE_CONFIG, 'w', encoding='utf-8') as f:
             json.dump(config, f, indent=4, ensure_ascii=False)
         return redirect(url_for('edit', file=where))
@@ -127,38 +134,59 @@ def create_file():
 def new():
     if request.method == 'POST':
         file = request.form.get('file')
-        type = request.form.get('type')
         def normalize_filename(name):
             # Remove illegal characters (for Windows)
             return re.sub(r'[<>:"/\\|?*\-]', '', name).strip()
-        fileName = normalize_filename(file)+'-'+type+'.json'
-        try:
-            with open(fileName, 'x', encoding='utf-8') as f:
-                data = []
-                f.write(json.dumps(data))
-        except FileExistsError:
-            pass
+        for type in ['playlist', 'download']:
+            fileName = normalize_filename(file)+'-'+type+'.json'
+            try:
+                with open(fileName, 'x', encoding='utf-8') as f:
+                    data = []
+                    f.write(json.dumps(data))
+            except FileExistsError:
+                pass
         with open(FILE_CONFIG, 'r', encoding='utf-8') as f:
             data = json.load(f)
         with open(FILE_CONFIG, 'w', encoding='utf-8') as f:
-            if type == 'download':
-                data.append(
-                    {
-                        'file': file,
-                        'type': type,
-                        'install': DOWNLOAD_DIR
-                    }
-                )
-            if type == 'playlist':
-                data.append(
-                    {
-                        'file': file,
-                        'type': type,
-                        'install': DOWNLOAD_FILE
-                    }
-                )
+            data.append(
+                {
+                    'file': file,
+                    'install-playlist': file+'-download.json',
+                    'install-directory': DOWNLOAD_DIR
+                }
+            )
             f.write(json.dumps(data))
         return redirect(url_for('edit', file=file))
+
+
+@app.route('/group/action', methods=['GET', 'POST'])
+def group_action():
+    def save(file, websites, filenames):
+        try:
+            entries = []
+            for name, site in zip(filenames, websites):
+                entries.append({
+                    'file': name,
+                    'url': site
+                })
+
+            with open(file, 'w', encoding='utf-8') as f:
+                json.dump(entries, f, indent=4)
+        except Exception as e:
+            print("ERROR:",e)
+    if request.method == 'POST':
+        file = request.form.get('file')
+        action = request.form.get('action')
+        filenames = request.form.getlist('filename')
+        websites = request.form.getlist('website')
+        print(websites, filenames)
+        save(file, websites, filenames)
+        if action == 'execute':
+            return redirect(url_for('execute_installation', file=file))
+        else:
+            return redirect(url_for('edit', file=file))
+
+
 
 
 @app.route('/save', methods=['GET', 'POST'])
@@ -200,8 +228,14 @@ def execute_index():
     with open(FILE_CONFIG, 'r', encoding='utf-8') as f:
         files = json.load(f)
         for item in files:
-            funfiles.append({'type': item['type'], 'file': item['file']})
+            funfiles.append({'name': item['file'].split('-')[0]})
     return render_template('execute.html', download_dir=DOWNLOAD_DIR, funfiles=funfiles)
+
+@app.route('/execute/install/<file>')
+def execute_installation(file):
+    type=(file.split('-')[1]).split('.')[0]
+    print('downloading',type,file)
+    return render_template('install.html', file=file, type=type , download_dir=DOWNLOAD_DIR)
 
 @app.route('/execute/thumbnail/<file>')
 def execute_thumbnail(file):
@@ -398,8 +432,8 @@ def execute_playlist_file(file):
     with open(FILE_CONFIG, 'r', encoding='utf-8') as f:
         files = json.load(f)
     for filef in files:
-        if filef['file'] == file_name and file_type == filef['type']:
-            download_to = filef['install']
+        if filef['file'] == file_name:
+            download_to = filef['install-playlist']
             download_to = os.path.normpath(download_to)
 
     logging.info(f'Flattening to {download_to}')
@@ -601,8 +635,8 @@ def execute_download_file(file):
     with open(FILE_CONFIG, 'r', encoding='utf-8') as f:
         files = json.load(f)
     for filef in files:
-        if filef['file'] == file_name and file_type == filef['type']:
-            download_to = filef['install']
+        if filef['file'] == file_name:
+            download_to = filef['install-directory']
             download_to = os.path.normpath(download_to)
             if not download_to.endswith(os.path.sep):
                 download_to += os.path.sep
@@ -779,14 +813,79 @@ def configBackground():
     except Exception as e:
         logging.error(f"configBackground: could not open Playlist Processed File: {str(e)}")
 
+
+def legacy_read(upgrade_needed):
+    def file_config():
+        updated_configs = []
+        read = []
+        with open(FILE_CONFIG, 'r', encoding='utf-8') as f:
+            configs = json.load(f)
+        for config in configs:
+            if config['file'] not in read:
+                playlist = None
+                download = None
+                if config['type'] == 'playlist':
+                    playlist = config['install']
+                    for f in configs:
+                        if f['file'] == config['file'] and f['type'] == 'download':
+                            download = f['install']
+                elif config['type'] == 'download':
+                    download = config['install']
+                    for f in configs:
+                        if f['file'] == config['file'] and f['type'] == 'playlist':
+                            playlist = f['install']
+                read.append(config['file'])
+                updated_configs.append(
+                    {
+                        'file': config['file'],
+                        'install-playlist': playlist if playlist is not None else config['file']+'-playlist.json',
+                        'install-download': download if download is not None else DOWNLOAD_DIR,
+                    }
+                )
+                for file_name in [config['file']+'-playlist.json', config['file']+'-download.json']:
+                    try:
+                        with open(file_name, 'x', encoding='utf-8') as f:
+                            data = []
+                            f.write(json.dumps(data))
+                    except FileExistsError:
+                        pass
+        with open(FILE_CONFIG, 'w', encoding='utf-8') as f:
+            json.dump(updated_configs, f, indent=4)
+
+    with open(SYSTEM_CONFIG, 'r', encoding='utf-8') as f:
+        SYSTEM_SET = json.load(f)
+    for upgrade_needed in SYSTEM_SET[1]['legacy-read']:
+        if upgrade_needed == 'file_config':
+            try:
+                file_config()
+                SYSTEM_SET[1]['legacy-read'].remove(upgrade_needed)
+            except Exception as e:
+                logging.error(f"UPGRADING: ERROR COULD NOT UPGRADE: {str(e)}")
+    if len(SYSTEM_SET[1]['legacy-read']) == 0:
+        SYSTEM_SET = SYSTEM_SET.pop()
+        with open(SYSTEM_CONFIG, 'w', encoding='utf-8') as f:
+            json.dump(SYSTEM_SET, f, indent=4)
+
+
+
+
+
 if __name__ == '__main__':
+    with open(SYSTEM_CONFIG, 'r', encoding='utf-8') as f:
+        SYSTEM_SET = json.load(f)
+    try:
+        if len(SYSTEM_SET[1]['legacy-read']) > 0:
+            legacy_read(SYSTEM_SET[1]['legacy-read'])
+    except Exception as e:
+        pass
+
     logging.basicConfig(level=logging.INFO)
     try:
         with open('config.json', 'x', encoding='utf-8') as f:
             f.write('''"web-dlp-down-z Log file": "logs",
             "Download To": "~/Downloads",
-            "Download File": "download.json",
-            "Playlist File": "playlist.json",
+            "Download File": "default-default-download.json",
+            "Playlist File": "default-default-playlist.json",
             "Download full log": "log_download.txt",
             "Playlist full log": "log_download.txt",
             "Process": "process.txt",

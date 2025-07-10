@@ -88,9 +88,14 @@ The `view` section contains log files for both playlist and individual downloads
 
 ---
 
-## Whats New v1.2.5:
+## Whats New v1.3.0:
 
-- Many playlists and Download files
+- Execute tab is replaced with a Queue list.
+- Save now has an option to save an execute in the edit page
+- Groups: this groups the download and playlist pages together
+  - Installation location is still determined by the user
+  - Default for playlist is the groups download page
+  - Default install for downloads is the directory based in the config file
 
 ---
 

@@ -7,8 +7,6 @@
 
 </head>
 <body>
-<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
-
 <nav>
     <table>
         <tr>
@@ -25,6 +23,30 @@
         </tr>
     </table>
 </nav>
+<center>
+    {% if type == 'download' %}
+        <h1>Downloading {{file}}</h1>
+    {% elif type == 'playlist' %}
+        <h1>Flattening {{file}}</h1>
+    {% endif %}
+</center>
+
+<script>
+    window.onload = function () {
+        {% if file.split('-')[0] == 'default' %}
+            {% if type == 'download' %}
+                startDownloading();
+            {% elif type == 'playlist' %}
+                startPlaylist();
+            {% endif %}
+        {% elif type == 'download' %}
+            executeDownload('{{file}}');
+        {% elif type == 'playlist' %}
+            executePlaylist('{{file}}');
+        {% endif %}
+    };
+</script>
+
 {% if download_dir %}
 <h2 id="download_dir">Download Directory: {{download_dir}}</h2>
 {% endif %}
@@ -187,122 +209,6 @@
         color: #333;
     }
 </style>
-
-<table id="entries-list">
-<thead>
-    <tr>
-        <th></th>
-        <th>Filename</th>
-        <th>Actions</th>
-    </tr>
-</thead>
-<tbody id="sortable-table">
-        <tr>
-            <td class="drag-handle">☰</td>
-            <td>
-                <input type="text" value="default playlist" readonly>
-                <input type="hidden" name="filename" value="default-playlist.json">
-            </td>
-            <td><button type="button" onclick="removeEntry(this)">Remove</button></td>
-        </tr>
-                <tr>
-            <td class="drag-handle">☰</td>
-            <td>
-                <input type="text" value="default Downloads" readonly>
-                <input type="hidden" name="filename" value="default-download.json">
-            </td>
-            <td><button type="button" onclick="removeEntry(this)">Remove</button></td>
-        </tr>
-    {% for entry in funfiles %}
-        <tr>
-            <td class="drag-handle">☰</td>
-            <td>
-                <input type="text" value="{{ entry.name }} Playlists" readonly>
-                <input type="hidden" name="filename" value="{{ entry.name }}-playlist.json">
-            </td>
-            <td><button type="button" onclick="removeEntry(this)">Remove</button></td>
-        </tr>
-        <tr>
-            <td class="drag-handle">☰</td>
-            <td>
-                <input type="text" value="{{ entry.name }} Downloads" readonly>
-                <input type="hidden" name="filename" value="{{ entry.name }}-download.json">
-            </td>
-            <td><button type="button" onclick="removeEntry(this)">Remove</button></td>
-        </tr>
-    {% endfor %}
-</tbody>
-</table>
-<div>
-    Warning: Playlists should go before its install location or else the video links will only be saved and not downloaded.
-</div>
-<br>
-<button type="submit" name="action" value="save">start</button>
-
-<script>
-  document.addEventListener('DOMContentLoaded', () => {
-    const thumbs = document.querySelectorAll('img.thumb');
-    thumbs.forEach(img => {
-      img.onerror = () => {
-        img.style.display = 'none';
-      };
-    });
-  });
-    new Sortable(document.getElementById('sortable-table'), {
-        animation: 150,
-        ghostClass: 'sortable-ghost',
-        handle: 'td', // Make the whole row draggable
-    });
-
-    function removeEntry(button) {
-        const row = button.closest('tr');
-        row.remove();
-    }
-
-    function addEntry() {
-        const filename = document.getElementById('new-filename').value.trim();
-        const website = document.getElementById('new-website').value.trim();
-
-        if (!filename || !website) {
-            alert("Both fields are required.");
-            return;
-        }
-
-        const tbody = document.getElementById('sortable-table');
-
-        const newRow = document.createElement('tr');
-        newRow.innerHTML = `
-            <td class="drag-handle">☰</td>
-            <td><img class="thumb" src="" alt="Thumbnail"></td>
-            <td><input type="text" name="filename" value="${filename}"></td>
-            <td><input type="text" name="website" value="${website}"></td>
-            <td><button type="button" onclick="removeEntry(this)">Remove</button></td>
-        `;
-        tbody.appendChild(newRow);
-
-        document.getElementById('new-filename').value = '';
-        document.getElementById('new-website').value = '';
-    }
-</script>
-
-
-{{mark}}
-
-<style>
-    .drag-handle {
-        cursor: grab;
-        font-size: 18px;
-        text-align: center;
-        width: 30px;
-        user-select: none;
-    }
-
-    .sortable-ghost {
-        opacity: 0.4;
-        background: #ffffcc;
-    }
-</style>
-
 
 
 </body>
