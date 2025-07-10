@@ -144,7 +144,7 @@
     </thead>
     <tbody id="sortable-table">
         {% for entry in entries %}
-            <tr>
+            <tr title="{{ entry.description }}">
                 <td class="drag-handle">☰</td>
                 <td>
                     <img class="thumb" src="{{ url_for('static', filename='thumb/' + entry.filename + '.png') }}" alt="Thumbnail">
@@ -164,12 +164,14 @@
     </tbody>
     </table>
     <br>
+    <div class="fixed-bottom-bar">
   <button type="submit" name="action" value="save">Save</button>
     {% if type == 'playlist' %}
         <button type="submit" name="action" value="execute">Save and separate playlist</button>
     {% elif type == 'download' %}
         <button type="submit" name="action" value="execute">Save and Install</button>
     {% endif %}
+        </div>
 </form>
 {% else %}
 <p>Select a file</p>
@@ -237,6 +239,50 @@
         opacity: 0.4;
         background: #ffffcc;
     }
+
+    .fixed-bottom-bar {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        padding: 10px 20px;
+        background-color: #f8f9fa;
+        border-top: 1px solid #ddd;
+        text-align: right;
+        z-index: 1000;
+        display: flex;
+        gap: 20px;
+    }
+
+
+.tooltip-container {
+    position: relative;
+    display: inline-block;
+}
+
+.tooltip-container .tooltip-text {
+    visibility: hidden;
+    opacity: 0;
+    width: 200px;
+    background-color: #333;
+    color: #fff;
+    text-align: left;
+    border-radius: 4px;
+    padding: 8px;
+    position: absolute;
+    z-index: 10;
+    bottom: 110%; /* or use left/right/top as needed */
+    left: 50%;
+    transform: translateX(-50%);
+    transition: opacity 0.2s;
+    font-size: 0.9em;
+}
+
+.tooltip-container:hover .tooltip-text {
+    visibility: visible;
+    opacity: 1;
+}
+}
 </style>
 
 

@@ -298,7 +298,7 @@ def execute_thumbnail(file):
                             if "private" in str(e).lower():
                                 duration = 'PRIVATE VIDEO'
                             else:
-                                duration = 'UNKNOWN'
+                                duration = 'None'
                             description = ''
 
                     with open(master_file, 'r', encoding='utf-8') as f:
