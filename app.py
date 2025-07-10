@@ -294,8 +294,11 @@ def execute_thumbnail(file):
                             info = ydl.extract_info(url, download=False)
                             duration = info.get('duration')
                             description = info.get('description')
-                        except Exception:
-                            duration = 'PRIVATE VIDEO'
+                        except Exception as e:
+                            if "private" in str(e).lower():
+                                duration = 'PRIVATE VIDEO'
+                            else:
+                                duration = 'UNKNOWN'
                             description = ''
 
                     with open(master_file, 'r', encoding='utf-8') as f:
@@ -409,7 +412,6 @@ def execute_thumbnail(file):
                 download_files = download_json.copy()
 
                 for file in download_files:
-                    download_json.pop(0)
                     current_index += 1
                     url = file["url"]  # filename URL
                     name = file["file"] if file["file"] else "unnamed"
