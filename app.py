@@ -57,7 +57,7 @@ def edit(file):
     try:
         with open(file, 'r', encoding='utf-8') as f:
             data = json.load(f)
-            print("DATA LOADED:", data)  # Debug print
+            # Debug print
 
             if isinstance(data, list):
                 for item in data:
@@ -102,7 +102,7 @@ def edit(file):
 
 
     return render_template('file.html', entries=entries, where=file, funfiles=funfiles, type=type,
-                           install=install, installOpts=installOpts, name=named)
+                           install=install, installOpts=installOpts, name=named, files=len(data))
 
 @app.route('/save/installs', methods=['POST'])
 def save_installs():
@@ -182,12 +182,16 @@ def group_action():
         action = request.form.get('action')
         filenames = request.form.getlist('filename')
         websites = request.form.getlist('website')
+        type = (file.split('-')[1]).split('.')[0]
         print(websites, filenames)
         save(file, websites, filenames)
         if action == 'execute':
             return redirect(url_for('execute_installation', file=file))
         else:
-            return redirect(url_for('edit', file=file))
+            if type == 'download':
+                return redirect(url_for('run_thumbnail_generator', file=file))
+            elif type == 'playlist':
+                return redirect(url_for('edit', file=file))
 
 
 
