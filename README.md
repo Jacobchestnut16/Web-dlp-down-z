@@ -8,8 +8,7 @@ well as full playlists, and organizes logs for better control and recovery. Crea
 
 ## ⚙️ Setup
 
-Before starting, configure your download path in the `config` file, this can be done manually or by using the config tab after running `app.py`:
-
+Make sure to set your download path in the `settings` tab default is linux:
 - **Windows**:  
   `C:\Users\<your-username>\Downloads`
 - **Linux/macOS**:  
@@ -19,62 +18,41 @@ Before starting, configure your download path in the `config` file, this can be 
 
 ## ✍️ Using the Tool – Editing Links
 
-Navigate to the `edit` section. You'll find two types:
+Navigate to the `edit` section. Here you'll find groups:
+- When you select your group you will see the playlist list by default
+- Press 'View Downloadable files' to see the list of download video links
 
-- **Downloads**:  
-  Contains individual media links to be downloaded.  
-  - You can **remove**, **reorder**, or **add** links as needed.
-  - Links will be processed in the order they appear.
-  
-  Default file:
-  - Downloads to the location in the config file
-  
-  Create your own list:
-  - Save the download location in the edit tab
+Saving:
+- Save will only save the file
+- Save and execute will save the file and order you chose then it will execute a flatten or install
+  - Flatten: flattens the playlist to the individual links so that you can remove and reorder how its downloaded
+  - Install: downloads all of the links in the select download list
 
-- **playlist**:  
-  Contains URLs to playlists.  
-  - Must be valid playlist links with downloadable media.
-  
-  Default file:
-  - Extracts links to the default download file
-  
-  Create your own list:
-  - Extracts to the file you chose in the edit tab
-    - The edit tab will rename everything to the original file name after hitting saved do not worry about this there will be a fix soon
-  
-  >WARNING:
-  >Each entry includes a **namespace** (a descriptive name or label). This is for logging and readability only; it does not affect the actual filenames.
+Setting install locations:
+- Each new group has default install locations:
+  - `Playlist` installs to its pared download list
+  - `Download` installs to the default location set in the `config file: edit this in teh  settings tab`
+- Each can be set to install to seperate locations:
+  - `Playlist` is required to install to an existing download file
+  - `Download` is required to install to an existing directory or folder
+  >        WARNING:
+  >        Each entry includes a **namespace** (a descriptive name or label). This is for logging and readability only; it does not affect the actual filenames.
 
 ---
 
 ## ▶️ Using the Tool – Executing Downloads
 
-In the `execute` section, you'll find two processes:
-
-- **process_playlist**:
-  - Breaks each playlist URL from the `playlist` file into individual media links.
-  - Each item is auto-named in the namespace based on its web link title.
-  - Does **not** display a progress bar — rely on the log output to check status.
-  
-- **downloads**:
-  - Downloads all individual links listed in the `downloads` file (latest saved version).
-  - Displays an ETA and progress bar for each download.
-  - Log output shows the progress and completion status.
-  - Names all files with the original name
-  - Will add in the metadata if provided from the source
-
+In the `execute` section:
+>WARNNING: Execute is still in development
+- You will see a queue to download everything and or flatten everything at once.
+  - Make sure to set all of the playlists in the queue before its set install location or else these will not download and only get added to the download list
 ---
 
 ## 📄 Viewing Logs
 
-The `view` section contains log files for both playlist and individual downloads:
-
-- These logs are essential for tracking what has been downloaded or failed.
-- **Logs must remain in the project folder** — they are hard coded so altering the location will restult in a crash or error.
-- Even if a download fails, its attempt is logged.
-- You can re-add failed or lost links from the logs back into the `downloads` file as needed (currently this is a failsafe, so you may have to copy and paste).
-
+The `view` section can be found in the settings tab with the top menu
+- `playlist log` logs all playlists flattened in DATE NAMESPACE URL format
+- `download log`logs all downloads in DATE NAMESPACE URL (Success|Error) format
 ---
 
 ## ✅ Features
