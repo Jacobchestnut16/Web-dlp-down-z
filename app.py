@@ -21,6 +21,7 @@ CONFIG_FILE = 'config.json'
 DOWNLOAD_DIR = '~/Downloads'
 FILE_CONFIG = 'file_config.json'
 SYSTEM_CONFIG = 'system_config.json'
+HIERARCHY_DIR = False
 
 
 @app.route('/')
@@ -852,10 +853,9 @@ def execute_download_file(file):
             except OSError as err:
                 print(f"data: Error: {str(err)}\n\n")
 
-    def generate(download_file):
+    def generate(download_file, download_to):
         messages = queue.Queue()
         retry = []
-        yield f"data: Download_dir ^{download_to}\n\n"
 
         yield "data: Starting Downloading process...\n\n"
         logging.info("data: Downloading started")
@@ -888,12 +888,32 @@ def execute_download_file(file):
                         messages.put("data: ❌ Download failed.\n\n")
                     else:
                         print(d["status"])
+
+                with YoutubeDL({'quiet': True}) as ydl:
+                    info = ydl.extract_info(url, download=False)
+                    description = info.get('description', '').replace('\n', ' ').replace('"', "'")
+                    uploader = info.get('uploader', '')
+                    webpage_url_domain = info.get('webpage_url_domain', '')
+
+                if HIERARCHY_DIR:
+                    download_to = os.path.normpath(
+                        os.path.join(download_to, webpage_url_domain, uploader)
+                    ) + os.path.sep
+
+                    os.makedirs(download_to, exist_ok=True)
+                yield f"data: Download_dir ^{download_to}\n\n"
+
                 ydl_opts = {
                     'format': 'best',
                     'outtmpl': f'{download_to}%(title)s.%(ext)s',
                     'postprocessors': [{'key': 'FFmpegMetadata'}],
                     'addmetadata': True,
                     'progress_hooks': [progress_hook],  # ✅ This is critical!
+                    'postprocessor_args': [
+                        '-metadata', f'comment={description}',
+                        '-metadata', f'artist={uploader}',
+                        '-metadata', f'album={webpage_url_domain}'
+                    ]
                 }
 
 
@@ -975,18 +995,6 @@ def execute_download_file(file):
                     url = file["url"]  # filename URL
                     name = file["file"] if file["file"] else "unnamed"
 
-                    def find_file_without_ext(directory, filename_without_ext):
-                        for root, dirs, files in os.walk(directory):
-                            for file in files:
-                                name, ext = os.path.splitext(file)
-                                if name == filename_without_ext:
-                                    return os.path.join(root, file)
-                        return None
-
-                    if find_file_without_ext('static/thumb', name):
-                        yield f"data: ▶️ Skipping already known ({current_index}/{total}): {name}, {url}\n\n"
-                        continue
-
                     # Progress hook to receive download updates
                     def progress_hook(d):
                         if d['status'] == 'downloading':
@@ -1003,6 +1011,15 @@ def execute_download_file(file):
                             messages.put("data: ❌ Download failed.\n\n")
                         else:
                             print("STATUS:", d['status'])
+
+                    if HIERARCHY_DIR:
+                        download_to = os.path.normpath(
+                            os.path.join(download_to, webpage_url_domain, uploader)
+                        ) + os.path.sep
+
+                        os.makedirs(download_to, exist_ok=True)
+
+                    yield f"data: Download_dir ^{download_to}\n\n"
 
                     ydl_opts = {
                         'format': 'best',
@@ -1066,7 +1083,7 @@ def execute_download_file(file):
         yield "data: ✅ Done.\n\n"
         logging.info("data: Done.")
 
-    return Response(stream_with_context(generate(file)), content_type='text/event-stream')
+    return Response(stream_with_context(generate(file, download_to)), content_type='text/event-stream')
 
 @app.route('/config')
 def config():
@@ -1080,12 +1097,17 @@ def config():
 
 @app.route('/setConfigSettings')
 def setConfigSettings():
-    global DOWNLOAD_DIR, DOWNLOAD_FILE, PROCESS_FILE, DOWNLOAD_FILE, PROCESS_FILE
+    global DOWNLOAD_DIR, DOWNLOAD_FILE, PROCESS_FILE, DOWNLOAD_FILE, PROCESS_FILE,HIERARCHY_DIR
     with open('config.json', 'r', encoding='utf-8') as f:
         config = json.load(f)
     logfile = config['web-dlp-down-z Log file']
     logging.basicConfig(filename=logfile, level=logging.DEBUG)
     logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+
+    if str(config['hierarchy']).lower().strip() == 'true':
+        HIERARCHY_DIR = True
+    else:
+        HIERARCHY_DIR = False
 
     logging.info(f"web setConfigSettings: running")
     try:
@@ -1117,12 +1139,17 @@ def setConfigSettings():
     return redirect(url_for('config'))
 
 def configBackground():
-    global DOWNLOAD_DIR, DOWNLOAD_FILE, PROCESS_FILE, DOWNLOAD_FILE, PROCESS_FILE
+    global DOWNLOAD_DIR, DOWNLOAD_FILE, PROCESS_FILE, DOWNLOAD_FILE, PROCESS_FILE,HIERARCHY_DIR
     with open('config.json', 'r', encoding='utf-8') as f:
         config = json.load(f)
     logfile = config['web-dlp-down-z Log file']
     logging.basicConfig(filename=logfile, level=logging.DEBUG)
     logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+
+    if str(config['hierarchy']).lower().strip() == 'true':
+        HIERARCHY_DIR = True
+    else:
+        HIERARCHY_DIR = False
 
     logging.info(f"configBackground: running")
     try:
@@ -1154,6 +1181,13 @@ def configBackground():
 
 
 def legacy_read():
+    def config_file():
+        with open('config.json', 'r', encoding='utf-8') as f:
+            config = json.load(f)
+        print(config)
+        config["hierarchy"] = "false"
+        with open('config.json', 'w', encoding='utf-8') as f:
+            json.dump(config, f, ensure_ascii=False, indent=4)
     def file_config():
         updated_configs = []
         read = []
@@ -1194,6 +1228,12 @@ def legacy_read():
     with open(SYSTEM_CONFIG, 'r', encoding='utf-8') as f:
         SYSTEM_SET = json.load(f)
     for upgrade_needed in SYSTEM_SET[1]['legacy-read']:
+        if upgrade_needed == 'config_file':
+            try:
+                config_file()
+                SYSTEM_SET[1]['config_file'].remove(upgrade_needed)
+            except Exception as e:
+                logging.error(f"UPGRADING: ERROR COULD NOT UPGRADE: {str(e)}")
         if upgrade_needed == 'file_config':
             try:
                 file_config()
@@ -1201,10 +1241,12 @@ def legacy_read():
             except Exception as e:
                 logging.error(f"UPGRADING: ERROR COULD NOT UPGRADE: {str(e)}")
     filtered_data = []
+    updated_to = SYSTEM_SET[1]["UPDATE"]
     for entry in SYSTEM_SET:
         if 'UPDATE' in entry and entry.get('legacy-read') == []:
             continue  # Skip this entry
         filtered_data.append(entry)
+    filtered_data[0]['Version'] = updated_to
     with open(SYSTEM_CONFIG, 'w', encoding='utf-8') as f:
         json.dump(filtered_data, f, indent=4)
 
@@ -1231,7 +1273,8 @@ if __name__ == '__main__':
             "Download full log": "log_download.txt",
             "Playlist full log": "log_download.txt",
             "Process": "process.txt",
-            "Playlist Processed": "playlist_processed.txt"
+            "Playlist Processed": "playlist_processed.txt",
+            "hierarchy": "false"
             ''')
     except FileExistsError:
         pass

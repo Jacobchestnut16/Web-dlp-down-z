@@ -1,11 +1,11 @@
 [
     {
-        "Version": "1.3.0"
+        "Version": "1.3.3"
     },
     {
-        "UPDATE": "1.3.0",
+        "UPDATE": "1.3.3",
         "legacy-read": [
-            "file_config"
+            "config_file"
         ]
     }
 ]
