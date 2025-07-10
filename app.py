@@ -840,7 +840,7 @@ def execute_download_file(file):
                         speed = ansi_escape.sub('', d.get('_speed_str', '').strip())
                         eta = ansi_escape.sub('', d.get('_eta_str', '').strip())
 
-                        messages.put(f"data: Downloading: {percent} at {speed}, ETA {eta} [{current_index}/{total}]\n\n")
+                        messages.put(f"data: Downloading: {percent} at {speed}, ETA {eta} - {name} [{current_index}/{total}]\n\n")
                     elif d['status'] == 'finished':
                         messages.put(f"data: ✅ Download complete: {d['filename']}\n\n")
                     elif d['status'] == 'error':
@@ -881,7 +881,7 @@ def execute_download_file(file):
                         try:
                             msg = messages.get(timeout=1)
                         except queue.Empty:
-                            yield f"data: waiting...\n\n"
+                            # yield f"data: waiting...\n\n"
                             continue
                         if msg == "done":
                             download_json.pop(0)
@@ -954,7 +954,8 @@ def execute_download_file(file):
                             eta = ansi_escape.sub('', d.get('_eta_str', '').strip())
 
                             messages.put(
-                                f"data: Downloading: {percent} at {speed}, ETA {eta} [{current_index}/{total}]\n\n")
+                                f"data: Downloading: {percent} at {speed}, ETA {eta} - {name} [{current_index}/{total}]\n\n")
+
                         elif d['status'] == 'finished':
                             messages.put(f"data: ✅ Download complete: {d['filename']}\n\n")
                         elif d['status'] == 'error':
@@ -993,7 +994,7 @@ def execute_download_file(file):
                             try:
                                 msg = messages.get(timeout=1)
                             except queue.Empty:
-                                yield f"data: waiting...\n\n"
+                                # yield f"data: waiting...\n\n"
                                 continue
                             if msg == "done":
                                 download_json.pop(0)

@@ -52,6 +52,7 @@
 {% endif %}
 
 <h1>Executing</h1>
+<h2 id="current-download"></h2>
 <div id="progress-container">
     <div id="progress-bar">
         <div id="progress-fill"></div>
@@ -116,9 +117,15 @@
                 // Example msg: Downloading: 30.5% at 370KiB/s, ETA 01:34
                 const percentMatch = msg.match(/Downloading:\s*([\d.]+)%/);
                 const etaMatch = msg.match(/ETA\s+(\S+)/);
+                const titleMatch = msg.match(/—\s+(.*?)\s+\[\d+\/\d+\]/);
 
                 const percent = percentMatch ? parseFloat(percentMatch[1]) : 0;
                 const eta = etaMatch ? etaMatch[1] : "unknown";
+                const title = titleMatch ? titleMatch[1] : "Unknown Title";
+
+                if (title != 'Unknown Title'){
+                    document.getElementById('current-download').innerText = "Downloading: "+title
+                }
 
                 progressFill.style.width = percent + "%";
                 // progressText.textContent = `[${"█".repeat(Math.floor(percent / 5)).padEnd(20, "░")}] ${percent.toFixed(1)}% — ETA ${eta}`;
@@ -154,9 +161,15 @@
                 // Example msg: Downloading: 30.5% at 370KiB/s, ETA 01:34
                 const percentMatch = msg.match(/Downloading:\s*([\d.]+)%/);
                 const etaMatch = msg.match(/ETA\s+(\S+)/);
+                const titleMatch = msg.match(/—\s+(.*?)\s+\[\d+\/\d+\]/);
 
                 const percent = percentMatch ? parseFloat(percentMatch[1]) : 0;
                 const eta = etaMatch ? etaMatch[1] : "unknown";
+                const title = titleMatch ? titleMatch[1] : "Unknown Title";
+
+                if (title != 'Unknown Title'){
+                    document.getElementById('current-download').innerText = "Downloading: "+title
+                }
 
                 progressFill.style.width = percent + "%";
                 // progressText.textContent = `[${"█".repeat(Math.floor(percent / 5)).padEnd(20, "░")}] ${percent.toFixed(1)}% — ETA ${eta}`;
