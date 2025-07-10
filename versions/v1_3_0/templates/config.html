@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Config</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+</head>
+<body>
+
+<nav>
+  <table>
+      <tr>
+    <td>
+      <a href="/edit">Edit</a>
+    </td>
+    <td>
+      <a href="/execute">Execute</a>
+    </td>
+      <td>
+          <a href="/config">Settings</a>
+      </td>
+  </tr>
+<tr>
+    <td><a href="/view/playlist_processed.txt">View Playlist log</a></td>
+    <td><a href="/view/process.txt">View Download log</a></td>
+  </tr>
+</table>
+</nav>
+
+<h1>Config File</h1>
+
+
+{% if where %}
+<form method="post" action="/save">
+  <input type="hidden" name="file" value="{{where}}.json">
+
+    <table id="entries-list">
+    <thead>
+    <tr><td><h2 style="text-wrap: nowrap">{{where}} Items:</h2></td></tr>
+        <tr>
+            <th></th>
+            <th>Path</th>
+        </tr>
+    </thead>
+    <tbody id="sortable-table">
+        {% for entry in entries %}
+            <tr>
+                <td><input class="item" type="text" name="filename" value="{{ entry.filename }}" readonly></td>
+                <td><input type="text" name="website" value="{{ entry.website }}"></td>
+            </tr>
+        {% endfor %}
+    </tbody>
+    </table>
+    <br>
+    <button type="submit">Save</button>
+</form>
+{% else %}
+<p>Select a file</p>
+{% endif %}
+
+<script>
+    function removeEntry(button) {
+        const row = button.closest('tr');
+        row.remove();
+    }
+
+    function addEntry() {
+        const filename = document.getElementById('new-filename').value.trim();
+        const website = document.getElementById('new-website').value.trim();
+
+        if (!filename || !website) {
+            alert("Both fields are required.");
+            return;
+        }
+
+        const tbody = document.getElementById('sortable-table');
+
+        const newRow = document.createElement('tr');
+        newRow.innerHTML = `
+            <td><input type="text" name="filename" value="${filename}"></td>
+            <td><input type="text" name="website" value="${website}"></td>
+            <td><button type="button" onclick="removeEntry(this)">Remove</button></td>
+        `;
+        tbody.appendChild(newRow);
+
+        document.getElementById('new-filename').value = '';
+        document.getElementById('new-website').value = '';
+    }
+</script>
+
+</body>
+</html>
