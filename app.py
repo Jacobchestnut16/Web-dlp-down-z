@@ -962,16 +962,11 @@ def execute_download_file(file):
                         else:
                             print("STATUS:", d['status'])
 
-                    tmp_dir = os.path.join(".", "static", "thumb")
-                    os.makedirs(tmp_dir, exist_ok=True)
-
-                    # Build the output template path safely
-                    out_path = os.path.join(tmp_dir, f"{name}.%(ext)s")
                     ydl_opts = {
                         'skip_download': True,
                         'writethumbnail': True,
                         'convert_thumbnails': 'jpg',
-                        'outtmpl': f'{out_path}',
+                        'outtmpl': f'{download_to}%(title).%(ext)s',
                         'progress_hooks': [progress_hook]
                     }
 
