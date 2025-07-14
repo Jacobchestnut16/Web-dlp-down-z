@@ -1208,41 +1208,45 @@ def update_now():
         if os.path.exists('system_update.json'):
             with open('system_update.json', 'r', encoding='utf-8') as f:
                 updated = json.load(f).get("updated", {})
-                needs_updating = json.load(f).get("needs_updating", {})
         else:
             updated = {"add": [], "merge": [], "remove": [], "app_need_update": app_need_update}
         with open('system_update.json', 'w', encoding='utf-8') as f:
             json.dump({"needs_updating": needs_updating, "updated": updated}, f, indent=4)
         print(updated)
         for f in add_files:
-            yield f"data: Adding {f}\n\n"
-            dir_path = os.path.dirname(f)
-            if dir_path:
-                os.makedirs(dir_path, exist_ok=True)
-            try:
-                with open(f, 'x', encoding='utf-8') as file:
-                    file.write(fetch_remote_file(BASE_URL + f))
-            except FileExistsError:
-                with open(f, 'w', encoding='utf-8') as file:
-                    file.write(fetch_remote_file(BASE_URL + f))
-            updated['add'].append(f)
-            with open('system_update.json', 'w', encoding='utf-8') as f:
-                json.dump({"needs_updating": needs_updating, "updated": updated}, f, indent=4)
+            if f not in updated:
+                yield f"data: Adding {f}\n\n"
+                dir_path = os.path.dirname(f)
+                if dir_path:
+                    os.makedirs(dir_path, exist_ok=True)
+                try:
+                    with open(f, 'x', encoding='utf-8') as file:
+                        file.write(fetch_remote_file(BASE_URL + f))
+                except FileExistsError:
+                    with open(f, 'w', encoding='utf-8') as file:
+                        file.write(fetch_remote_file(BASE_URL + f))
+                updated['add'].append(f)
+                with open('system_update.json', 'w', encoding='utf-8') as f:
+                    json.dump({"needs_updating": needs_updating, "updated": updated}, f, indent=4)
         for f in update_files:
-            yield f"data: Updating {f}\n\n"
-            merge_json_files(f, fetch_remote_json(BASE_URL + f))
-            updated['merge'].append(f)
-            with open('system_update.json', 'w', encoding='utf-8') as f:
-                json.dump({"needs_updating": needs_updating, "updated": updated}, f, indent=4)
+            if f not in updated:
+
+                yield f"data: Updating {f}\n\n"
+                merge_json_files(f, fetch_remote_json(BASE_URL + f))
+                updated['merge'].append(f)
+                with open('system_update.json', 'w', encoding='utf-8') as f:
+                    json.dump({"needs_updating": needs_updating, "updated": updated}, f, indent=4)
         for f in clean_files:
-            yield f"data: Removing {f}"
-            try:
-                os.remove(f)
-            except FileNotFoundError:
-                yield f"data: File {f} not found, skipping remove\n\n"
-            updated['remove'].append(f)
-            with open('system_update.json', 'w', encoding='utf-8') as f:
-                json.dump({"needs_updating": needs_updating, "updated": updated}, f, indent=4)
+            if f not in updated:
+
+                yield f"data: Removing {f}"
+                try:
+                    os.remove(f)
+                except FileNotFoundError:
+                    yield f"data: File {f} not found, skipping remove\n\n"
+                updated['remove'].append(f)
+                with open('system_update.json', 'w', encoding='utf-8') as f:
+                    json.dump({"needs_updating": needs_updating, "updated": updated}, f, indent=4)
         all_applied = (
                 set(needs_updating['add']) == set(updated['add']) and
                 set(needs_updating['merge']) == set(updated['merge']) and
