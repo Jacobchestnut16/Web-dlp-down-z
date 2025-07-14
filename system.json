@@ -23,7 +23,7 @@
                     "templates/view.html",
                     "templates/update.html"
                 ],
-                "merge": ["file_config.json"]
+                "merge": ["config.json"]
             }
         }
     ]
