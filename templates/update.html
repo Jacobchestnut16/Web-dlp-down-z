@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Update</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+</head>
+<body>
+
+<nav>
+  <table>
+      <tr>
+    <td>
+      <a href="/edit">Edit</a>
+    </td>
+    <td>
+      <a href="/execute">Execute</a>
+    </td>
+      <td>
+          <a href="/config">Settings</a>
+      </td>
+  </tr>
+<tr>
+    <td><a href="/view/playlist_processed.txt">View Playlist log</a></td>
+    <td><a href="/view/process.txt">View Download log</a></td>
+  </tr>
+</table>
+</nav>
+
+<h2>Current Version: {{current}}</h2>
+<p>{{updateTxt}} {% if updateVersion %}{{updateVersion}}{% endif %}</p>
+{% if updateVersion %}<button onclick="start()">Update now</button>{% endif %}
+<pre id="log"></pre>
+
+<script>
+    function start() {
+        const logElement = document.getElementById("log");
+        const eventSource = new EventSource("/update/start");
+        eventSource.onmessage = function (event) {
+            logElement.textContent += event.data + "\n";
+            logElement.scrollTop = logElement.scrollHeight;  // auto-scroll
+        };
+
+        eventSource.onerror = function () {
+            logElement.textContent += "[Error receiving updates]\n";
+            eventSource.close();
+        };
+    }
+
+</script>
+</body>
+</html>

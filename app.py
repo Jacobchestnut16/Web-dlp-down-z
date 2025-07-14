@@ -9,6 +9,7 @@ import datetime
 from urllib.parse import urlparse
 from flask import Flask, render_template, url_for, request, redirect, Response, stream_with_context
 from yt_dlp import YoutubeDL
+import requests
 
 
 app = Flask(__name__)
@@ -20,7 +21,7 @@ PROCESS_FILE = 'process.txt'
 CONFIG_FILE = 'config.json'
 DOWNLOAD_DIR = '~/Downloads'
 FILE_CONFIG = 'file_config.json'
-SYSTEM_CONFIG = 'system_config.json'
+SYSTEM_CONFIG = 'system.json'
 HIERARCHY_DIR = False
 active_downloads = {}  # {file_name: threading.Thread}
 stop_flags = {}        # {file_name: threading.Event}
@@ -1138,16 +1139,145 @@ def legacy_read():
 
 
 
+def fetch_remote_json(url):
+    res = requests.get(url)
+    res.raise_for_status()
+    return res.json()
+
+def fetch_remote_file(url):
+    res = requests.get(url)
+    res.raise_for_status()
+    return res.text
+
+BASE_URL = 'https://raw.githubusercontent.com/Jacobchestnut16/Web-dlp-down-z/update/'
+def check_for_updates():
+    with open('system.json', 'r', encoding='utf-8') as f:
+        version = json.load(f)['version']
+    ulr = 'https://raw.githubusercontent.com/Jacobchestnut16/Web-dlp-down-z/update/system.json'
+    remote_version = fetch_remote_json(ulr)["version"]
+    if version != remote_version:
+        return ("Update required", remote_version)
+    else:
+        return ("Up to date", version)
+
+
+@app.route('/update/start')
+def update_now():
+    print("update now")
+    def generate():
+        print("staring update")
+        def merge_json_files(existing_path, patch_data):
+            if not os.path.exists(existing_path):
+                user_config = {}
+            else:
+                with open(existing_path, 'r', encoding='utf-8') as f:
+                    user_config = json.load(f)
+
+            # Merge new keys that don't exist
+            for key, value in patch_data.items():
+                if key not in user_config:
+                    user_config[key] = value
+
+            # Save updated config
+            with open(existing_path, 'w', encoding='utf-8') as f:
+                json.dump(user_config, f, indent=4)
+
+        def version_tuple(v):
+            return tuple(map(int, v.split('.')))
+
+        with open('system.json', 'r', encoding='utf-8') as f:
+            version = json.load(f)['version']
+        version_split = version_tuple(version)
+        remote_json = fetch_remote_json(BASE_URL + 'system.json')
+        add_files = []
+        update_files = []
+        clean_files = []
+        for version_entry in remote_json["versions"]:
+            for key, value in version_entry.items():
+                if version_split < version_tuple(key):
+                    add_files.extend(value.get('add', []))
+                    update_files.extend(value.get('merge', []))
+                    clean_files.extend(value.get('remove', []))
+        if "app.py" in add_files:
+            app_need_update = True
+            add_files.remove("app.py")
+        else:
+            app_need_update = False
+        needs_updating = {'add': add_files, 'merge': update_files, 'remove': clean_files,
+                          'app_need_update': app_need_update}
+        if os.path.exists('system_update.json'):
+            with open('system_update.json', 'r', encoding='utf-8') as f:
+                updated = json.load(f).get("updated", {})
+                needs_updating = json.load(f).get("needs_updating", {})
+        else:
+            updated = {"add": [], "merge": [], "remove": [], "app_need_update": app_need_update}
+        with open('system_update.json', 'w', encoding='utf-8') as f:
+            json.dump({"needs_updating": needs_updating, "updated": updated}, f, indent=4)
+        print(updated)
+        for f in add_files:
+            yield f"data: Adding {f}\n\n"
+            dir_path = os.path.dirname(f)
+            if dir_path:
+                os.makedirs(dir_path, exist_ok=True)
+            try:
+                with open(f, 'x', encoding='utf-8') as file:
+                    file.write(fetch_remote_file(BASE_URL + f))
+            except FileExistsError:
+                with open(f, 'w', encoding='utf-8') as file:
+                    file.write(fetch_remote_file(BASE_URL + f))
+            updated['add'].append(f)
+            with open('system_update.json', 'w', encoding='utf-8') as f:
+                json.dump({"needs_updating": needs_updating, "updated": updated}, f, indent=4)
+        for f in update_files:
+            yield f"data: Updating {f}\n\n"
+            merge_json_files(f, fetch_remote_json(BASE_URL + f))
+            updated['merge'].append(f)
+            with open('system_update.json', 'w', encoding='utf-8') as f:
+                json.dump({"needs_updating": needs_updating, "updated": updated}, f, indent=4)
+        for f in clean_files:
+            yield f"data: Removing {f}"
+            try:
+                os.remove(f)
+            except FileNotFoundError:
+                yield f"data: File {f} not found, skipping remove\n\n"
+            updated['remove'].append(f)
+            with open('system_update.json', 'w', encoding='utf-8') as f:
+                json.dump({"needs_updating": needs_updating, "updated": updated}, f, indent=4)
+        all_applied = (
+                set(needs_updating['add']) == set(updated['add']) and
+                set(needs_updating['merge']) == set(updated['merge']) and
+                set(needs_updating['remove']) == set(updated['remove'])
+        )
+        if all_applied:
+            with open('system.json', 'w', encoding='utf-8') as f:
+                json.dump({"version": remote_json['version']}, f, indent=4)
+            if app_need_update:
+                with open('app.py', 'w', encoding='utf-8') as f:
+                    f.write(fetch_remote_file(BASE_URL + 'app.py'))
+                yield f"data: Update complete, APP NEEDS RESTARTED.\n\n"
+            else:
+                yield f"data: Update complete.\n\n"
+            os.remove('system_update.json')
+        else:
+            yield f"data: Update failed.\n\n"
+
+    return Response(stream_with_context(generate()), content_type='text/event-stream')
+
+
+
+@app.route('/update')
+def update():
+    with open('system.json', 'r', encoding='utf-8') as f:
+        current = json.load(f)['version']
+    update = check_for_updates()
+    if update[0] == "Update required":
+        return render_template('update.html', updateTxt=update[0], updateVersion=update[1], current=current)
+    else:
+        return render_template('update.html', updateTxt=update[0], current=current)
+
 
 
 if __name__ == '__main__':
-    with open(SYSTEM_CONFIG, 'r', encoding='utf-8') as f:
-        SYSTEM_SET = json.load(f)
-    try:
-        if len(SYSTEM_SET[1]['legacy-read']) > 0:
-            legacy_read()
-    except Exception as e:
-        pass
 
     logging.basicConfig(level=logging.INFO)
     try:
