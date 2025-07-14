@@ -22,7 +22,7 @@
                     "templates/thumb.html",
                     "templates/view.html"
                 ],
-                "merge": ["file_config.json"]
+                "merge": ["config.json"]
             }
         }
     ]
