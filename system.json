@@ -24,6 +24,19 @@
                 ],
                 "merge": ["file_config.json"]
             }
+        },
+        {
+            "1.3.4": {
+                "add": [
+                    "templates/file.html",
+                    "templates/config.html",
+                    "templates/view.html",
+                    "templates/index.html",
+                    "static/css/style.css",
+                    "default-config.json",
+                    "app.py"
+                ]
+            }
         }
     ]
 }
