@@ -969,9 +969,17 @@ def fetch_remote_file(url):
 
 BASE_URL = 'https://raw.githubusercontent.com/Jacobchestnut16/Web-dlp-down-z/update/'
 def check_for_updates():
+    global BASE_URL
+    try:
+        with open('beta_key', 'r', encoding='utf-8') as f:
+            beta_key = f.read()
+        if beta_key == fetch_remote_json('https://raw.githubusercontent.com/Jacobchestnut16/Web-dlp-down-z/refs/heads/pre-release/beta_key'):
+            BASE_URL = "https://raw.githubusercontent.com/Jacobchestnut16/Web-dlp-down-z/refs/heads/pre-release/"
+    except Exception as e:
+        pass
     with open('system.json', 'r', encoding='utf-8') as f:
         version = json.load(f)['version']
-    ulr = 'https://raw.githubusercontent.com/Jacobchestnut16/Web-dlp-down-z/update/system.json'
+    ulr = BASE_URL+'system.json'
     remote_version = fetch_remote_json(ulr)["version"]
     if version != remote_version:
         return ("Update required", remote_version)
