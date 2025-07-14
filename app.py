@@ -971,12 +971,15 @@ BASE_URL = 'https://raw.githubusercontent.com/Jacobchestnut16/Web-dlp-down-z/upd
 def check_for_updates():
     global BASE_URL
     try:
+        pre_release_auth = fetch_remote_file('https://raw.githubusercontent.com/Jacobchestnut16/Web-dlp-down-z/refs/heads/pre-release/beta_key').strip()
         with open('beta_key', 'r', encoding='utf-8') as f:
-            beta_key = f.read()
-        if beta_key == fetch_remote_json('https://raw.githubusercontent.com/Jacobchestnut16/Web-dlp-down-z/refs/heads/pre-release/beta_key'):
+            beta_key = f.read().strip()
+            print(f'beta_key: {beta_key}')
+        print(f'match: {beta_key == pre_release_auth}')
+        if beta_key == pre_release_auth:
             BASE_URL = "https://raw.githubusercontent.com/Jacobchestnut16/Web-dlp-down-z/refs/heads/pre-release/"
     except Exception as e:
-        pass
+        print(e)
     with open('system.json', 'r', encoding='utf-8') as f:
         version = json.load(f)['version']
     ulr = BASE_URL+'system.json'
