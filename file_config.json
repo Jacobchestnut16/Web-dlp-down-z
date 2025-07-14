@@ -1,7 +1,1 @@
-[
-    {
-        "file": "New",
-        "install-playlist": "New-download.json",
-        "install-directory": "C:\\Users\\Jacob Chestnut\\Videos\\Kodi\\"
-    }
-]
+[{"file": "New", "install-playlist": "New-download.json", "install-directory": "C:\\Users\\Jacob Chestnut\\Videos\\Kodi\\"}, {"file": "fin", "install-playlist": "fin-download.json", "install-directory": "~\\Downloads\\"}]

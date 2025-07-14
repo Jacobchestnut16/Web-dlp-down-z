@@ -25,24 +25,24 @@
 </nav>
 <center>
     {% if type == 'download' %}
-        <h1>Downloading {{file}}</h1>
+    <h1>Downloading {{file}}</h1>
     {% elif type == 'playlist' %}
-        <h1>Flattening {{file}}</h1>
+    <h1>Flattening {{file}}</h1>
     {% endif %}
 </center>
 
 <script>
     window.onload = function () {
         {% if file.split('-')[0] == 'default' %}
-            {% if type == 'download' %}
-                startDownloading();
-            {% elif type == 'playlist' %}
-                startPlaylist();
-            {% endif %}
-        {% elif type == 'download' %}
-            executeDownload('{{file}}');
+        {% if type == 'download' %}
+        startDownloading();
         {% elif type == 'playlist' %}
-            executePlaylist('{{file}}');
+        startPlaylist();
+        {% endif %}
+        {% elif type == 'download' %}
+        executeDownload('{{file}}');
+        {% elif type == 'playlist' %}
+        executePlaylist('{{file}}');
         {% endif %}
     };
 </script>
@@ -60,7 +60,7 @@
     <div id="progress-text">Waiting for download to start...</div>
 </div>
 <pre id="log"></pre>
-
+<div class="fixed-bottom-bar"><button id="stop-button" style="display: none;">🛑 Stop Download</button></div>
 <script>
     function startPlaylist() {
         const logElement = document.getElementById("log");
@@ -89,11 +89,11 @@
         eventSource.onmessage = function (event) {
             logElement.textContent += event.data + "\n";
             logElement.scrollTop = logElement.scrollHeight;  // auto-scroll
-                if (event.data.startsWith("REDIRECT ")) {
-                    const targetUrl = event.data.replace("REDIRECT ", "").trim();
-                    eventSource.close();
-                    window.location.href = targetUrl;
-                }
+            if (event.data.startsWith("REDIRECT ")) {
+                const targetUrl = event.data.replace("REDIRECT ", "").trim();
+                eventSource.close();
+                window.location.href = targetUrl;
+            }
         };
 
         eventSource.onerror = function () {
@@ -103,95 +103,89 @@
 
 
     }
-    function startDownloading() {
-        const logElement = document.getElementById("log");
-        const progressFill = document.getElementById("progress-fill");
-        const progressText = document.getElementById("progress-text");
-
-        const eventSource = new EventSource("/execute/download");
-
-        eventSource.onmessage = function (event) {
-            const msg = event.data;
-
-            if (msg.startsWith("Downloading:")) {
-                // Example msg: Downloading: 30.5% at 370KiB/s, ETA 01:34
-                const percentMatch = msg.match(/Downloading:\s*([\d.]+)%/);
-                const etaMatch = msg.match(/ETA\s+(\S+)/);
-                const titleMatch = msg.match(/—\s+(.*?)\s+\[\d+\/\d+\]/);
-
-                const percent = percentMatch ? parseFloat(percentMatch[1]) : 0;
-                const eta = etaMatch ? etaMatch[1] : "unknown";
-                const title = titleMatch ? titleMatch[1] : "Unknown Title";
-
-                if (title != 'Unknown Title'){
-                    document.getElementById('current-download').innerText = "Downloading: "+title
-                }
-
-                progressFill.style.width = percent + "%";
-                // progressText.textContent = `[${"█".repeat(Math.floor(percent / 5)).padEnd(20, "░")}] ${percent.toFixed(1)}% — ETA ${eta}`;
-                progressText.textContent = `${percent.toFixed(1)}% — ETA ${eta}`;
-            } else {
-                logElement.textContent += msg + "\n";
-                logElement.scrollTop = logElement.scrollHeight;
-
-                if (msg.includes("✅ Done.") || msg.includes("Download complete")) {
-                    progressText.textContent = "✅ Idle";
-                    progressFill.style.width = "0%";
-                }
-            }
-        };
-
-        eventSource.onerror = function () {
-            logElement.textContent += "[Error receiving download updates]\n";
-            eventSource.close();
-        };
-    }
-
+let eventSource = null;
     function executeDownload(file) {
         const logElement = document.getElementById("log");
         const progressFill = document.getElementById("progress-fill");
         const progressText = document.getElementById("progress-text");
+        const stopButton = document.getElementById("stop-button");
 
-        const eventSource = new EventSource("/execute/download/"+file);
+        stopButton.style.display = "inline-block";
+
+        eventSource = new EventSource("/execute/download/"+file);
 
         eventSource.onmessage = function (event) {
             const msg = event.data;
 
             if (msg.startsWith("Downloading:")) {
-                // Example msg: Downloading: 30.5% at 370KiB/s, ETA 01:34
                 const percentMatch = msg.match(/Downloading:\s*([\d.]+)%/);
                 const etaMatch = msg.match(/ETA\s+(\S+)/);
-                const titleMatch = msg.match(/—\s+(.*?)\s+\[\d+\/\d+\]/);
+                const titleMatch = msg.match(/-\s+(.*?)\s+\[\d+\/\d+\]/);
 
                 const percent = percentMatch ? parseFloat(percentMatch[1]) : 0;
                 const eta = etaMatch ? etaMatch[1] : "unknown";
                 const title = titleMatch ? titleMatch[1] : "Unknown Title";
+                console.log("the title: " +title)
 
-                if (title != 'Unknown Title'){
-                    document.getElementById('current-download').innerText = "Downloading: "+title
+                if (title !== "Unknown Title") {
+                    document.getElementById('current-download').innerText = "Downloading: " + title;
                 }
 
                 progressFill.style.width = percent + "%";
-                // progressText.textContent = `[${"█".repeat(Math.floor(percent / 5)).padEnd(20, "░")}] ${percent.toFixed(1)}% — ETA ${eta}`;
                 progressText.textContent = `${percent.toFixed(1)}% — ETA ${eta}`;
-            } else if (msg.startsWith('Download_dir')){
-                const dir = msg.split('^')
-                document.getElementById('download_dir').innerText = "Download Directory: "+dir[1]
-            } else {
+            }
+
+            else if (msg.startsWith("Download_dir")) {
+                const dir = msg.split("^");
+                document.getElementById('download_dir').innerText = "Download Directory: " + dir[1];
+            }
+
+            else {
                 logElement.textContent += msg + "\n";
                 logElement.scrollTop = logElement.scrollHeight;
 
-                if (msg.includes("✅ Done.") || msg.includes("Download complete")) {
+                if (msg.trim() === "✅ Done.") {
                     progressText.textContent = "✅ Idle";
                     progressFill.style.width = "0%";
+                    stopButton.style.display = "none";
+                    eventSource.close();  // ✅ Now this closes only when ALL downloads are done
+                }
+                else if (msg.includes("⛔ Download stopped")) {
+                    progressText.textContent = "⛔ Download stopped";
+                    progressFill.style.width = "0%";
+                    stopButton.style.display = "none";
+                    eventSource.close();
                 }
             }
         };
 
         eventSource.onerror = function () {
             logElement.textContent += "[Error receiving download updates]\n";
+            stopButton.style.display = "none";
             eventSource.close();
         };
+
+        // Register stop button click handler
+        stopButton.onclick = function () {
+            stopDownload(file);
+        };
+    }
+
+    function stopDownload(file) {
+        fetch("/execute/stop/" + file, {
+            method: "POST"
+        })
+            .then(() => {
+                if (eventSource) {
+                    eventSource.close();
+                }
+                document.getElementById("progress-text").textContent = "⛔ Download stopped";
+                document.getElementById("progress-fill").style.width = "0%";
+                document.getElementById("stop-button").style.display = "none";
+            })
+            .catch((err) => {
+                console.error("Error stopping download:", err);
+            });
     }
 </script>
 
@@ -220,6 +214,20 @@
         font-family: monospace;
         font-size: 14px;
         color: #333;
+    }
+
+    .fixed-bottom-bar {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        padding: 10px 20px;
+        background-color: #f8f9fa;
+        border-top: 1px solid #ddd;
+        text-align: right;
+        z-index: 1000;
+        display: flex;
+        gap: 20px;
     }
 </style>
 
