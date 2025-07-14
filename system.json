@@ -21,8 +21,7 @@
                     "templates/install.html",
                     "templates/thumb.html",
                     "templates/view.html"
-                ],
-                "merge": ["config.json"]
+                ]
             }
         },
         {
