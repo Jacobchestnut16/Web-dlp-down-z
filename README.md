@@ -120,22 +120,15 @@ The `view` section can be found in the settings tab with the top menu
 
 ---
 
-## Whats New v1.3.3:
+## Whats New v1.3.4:
 
-- Execute tab is replaced with a Queue list.
-- Save now has an option to save an execute in the edit page
-- Groups: this groups the download and playlist pages together
-  - Installation location is still determined by the user
-  - Default for playlist is the groups download page
-  - Default install for downloads is the directory based in the config file
-- After a download starts it is no longer removed from the list if it fails
-- Downloads will now retry to download something 3 time before it quits
-  - Retries happen at the end of the process
-- Downloads now have a stop function to stop downloading without leaving the page
-- Download lists now include 
-  - description by hovering over the row or image
-  - duration next to the image || serves as a way to indicate if the video is private as well
-
+- New download selections
+  - Formats: `3gp`, `aac`, `flv`, `m4a`, `mp3`, `mp4`, `ogg`, `wav`, `webm`
+  - Using this feature may seem confusing, here are the steps:
+    - to select how the whole list downloads set the download as at the top of the download list page
+      - this only works if each item is set to `default` as well
+    - setting individual items to download in different formats you will select teh format in the format column and press save
+    - if you set the whole page to download eg. `mp3`, but set a few items as another format thats not `default` nor in this case `mp3` it will download as that format over the set page download as. 
 ---
 
 ## 📌 Requirements

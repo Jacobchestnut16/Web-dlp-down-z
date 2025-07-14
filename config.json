@@ -1,0 +1,11 @@
+{
+    "web-dlp-down-z Log file": "logs",
+    "Download To": "~/Downloads",
+    "Download File": "default-download.json",
+    "Playlist File": "default-playlist.json",
+    "Download full log": "log_download.txt",
+    "Playlist full log": "log_download.txt",
+    "Process": "process.txt",
+    "Playlist Processed": "playlist_processed.txt",
+    "hierarchy": "false"
+}

@@ -57,6 +57,7 @@ def edit(file):
 
     entries = []
     funfiles = []
+    downloadAs = 'default'
 
     try:
         with open(file, 'r', encoding='utf-8') as f:
@@ -85,6 +86,7 @@ def edit(file):
                             'duration': duration_formatted,
                             'description': item.get('description', ''),
                             'thumbnail': item.get('thumbnail', ''),
+                            'downloadAs': item.get('downloadAs', 'default'),
                         })
     except FileNotFoundError:
         print("default-playlist.json not found.")
@@ -104,6 +106,7 @@ def edit(file):
         files = json.load(f)
         for item in files:
             if named == item['file']:
+                downloadAs = item.get('downloadAs', 'web_default')
                 if type == 'download':
                     install = item['install-directory']
                 elif type == 'playlist':
@@ -122,8 +125,13 @@ def edit(file):
     except Exception as e:
         cnt = 0
 
+    if named == 'default':
+        with open('default-config.json', 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        downloadAs = data['downloadAs']
+
     return render_template('file.html', entries=entries, where=file, funfiles=funfiles, type=type,
-                           install=install, installOpts=installOpts, name=named, files=cnt)
+                           install=install, installOpts=installOpts, name=named, files=cnt, downloadAs=(downloadAs if downloadAs else 'web_default'))
 
 @app.route('/save/installs', methods=['POST'])
 def save_installs():
@@ -182,17 +190,18 @@ def new():
 
 @app.route('/group/action', methods=['GET', 'POST'])
 def group_action():
-    def save(file, websites, filenames, description, duration):
+    def save(file, websites, filenames, description, duration, downloadAs):
         try:
             entries = []
             seen_urls = set()
-            for name, site in zip(filenames, websites, description, duration):
+            for name, site in zip(filenames, websites, description, duration, downloadAs):
                 if site not in seen_urls:
                     entries.append({
                         'file': name,
                         'url': site,
                         'description': description,
-                        'duration': duration
+                        'duration': duration,
+                        'downloadAs': downloadAs
                     })
                     seen_urls.add(site)
             with open(file, 'w', encoding='utf-8') as f:
@@ -223,8 +232,9 @@ def group_action():
         websites = request.form.getlist('website')
         description = request.form.getlist('description')
         duration = request.form.getlist('duration')
+        downloadAs = request.form.getlist('downloadAs')
         type = (file.split('-')[1]).split('.')[0]
-        save(file, websites, filenames, description, duration) if type == 'download' else save_playlist(file, websites, filenames)
+        save(file, websites, filenames, description, duration, downloadAs) if type == 'download' else save_playlist(file, websites, filenames)
 
         if action == 'execute':
             return redirect(url_for('execute_installation', file=file))
@@ -270,6 +280,23 @@ def save():
             return redirect(url_for('run_thumbnail_generator', file=DOWNLOAD_FILE))
         return redirect(url_for('run_thumbnail_generator', file=file))  # or back to 'edit' if that’s the page
 
+@app.route('/save/downloadAs', methods=['GET', 'POST'])
+def saveAS():
+    where = request.form['file']
+    name = (where.split('-'))[0]
+    downloadAs = request.form.get('downloadAs')
+    with open(FILE_CONFIG if name != 'default' else 'default-config.json', 'r', encoding='utf-8') as f:
+        config = json.load(f)
+    if name != 'default':
+        for item in config:
+            if item['file'] == name:
+                config['downloadAs'] = downloadAs
+    else:
+        config['downloadAs'] = downloadAs
+    with open(FILE_CONFIG if name != 'default' else 'default-config.json', 'w', encoding='utf-8') as f:
+        json.dump(config, f, indent=4)
+    return redirect(url_for('edit', file=where))
+
 @app.route('/run/thumbnail-generator/<file>')
 def run_thumbnail_generator(file):
     return render_template('thumb.html', file=file)
@@ -312,14 +339,6 @@ def execute_thumbnail(file):
                 url = file["url"]  # filename URL
                 name = file["file"] if file["file"] else "unnamed"
 
-                def find_file_without_ext(directory, filename_without_ext):
-                    for root, dirs, files in os.walk(directory):
-                        for file in files:
-                            name, ext = os.path.splitext(file)
-                            if name == filename_without_ext:
-                                return os.path.join(root, file)
-                    return None
-
                 if file.get("duration") in [None, "", "None"] or file.get("description") in [None, ""]:
                     yield (f"data:Item ({current_index}/{total}), Updating metadata for {name}: {('Duration.' if not file.get('duration') else '')}"
                            f" {('Description.' if not file.get('duration') else '')} {('thumbnail.' if not file.get('thumbnail') else '')}\n\n")
@@ -330,15 +349,16 @@ def execute_thumbnail(file):
                     with YoutubeDL(ydl_opts) as ydl:
                         try:
                             info = ydl.extract_info(url, download=False)
+                            thumbnail = info.get('thumbnail')
                             duration = info.get('duration')
                             description = info.get('description')
-                            thumbnail = info.get('thumbnail')
                         except Exception as e:
                             if "private" in str(e).lower():
                                 duration = 'PRIVATE VIDEO'
                             else:
                                 duration = 'None'
                             description = ''
+                            thumbnail = ''
 
                     with open(master_file, 'r', encoding='utf-8') as f:
                         json_data = json.load(f)
@@ -362,106 +382,6 @@ def execute_thumbnail(file):
         yield f"data: REDIRECT /edit/{master_file}\n\n"
 
     return Response(stream_with_context(generate(file)), content_type='text/event-stream')
-
-#
-# @app.route('/execute/playlist')
-# def execute_playlist():
-#     def generate():
-#         ydl_opts = {
-#             'skip_download': True,
-#             'quiet': True,
-#             'no_warnings': True,
-#             'extract_flat': 'in_playlist'
-#         }
-#
-#         yield "data: Starting playlist separation...\n\n"
-#
-#         try:
-#             with open(PLAYLIST_FILE, 'r', encoding='utf-8') as f:
-#                 playlist_json = json.load(f)
-#
-#             # Step 2: Process each line one by one
-#             for playlist in playlist_json:
-#                 playlist_json.pop(0)
-#                 url = playlist["url"]  # filename URL
-#                 name = playlist["file"] if playlist["file"] else "unnamed"
-#
-#                 yield f"data: ▶️ Processing playlist: {url}\n\n"
-#
-#                 try:
-#                     with YoutubeDL(ydl_opts) as ydl:
-#                         info = ydl.extract_info(url, download=False)
-#
-#                         if '_type' in info and info['_type'] == 'playlist':
-#                             entries = info.get('entries', [])
-#                             for entry in entries:
-#                                 video_title = entry.get('title', 'Unknown title')
-#                                 video_url = entry.get('url')
-#                                 duration = info.get("duration")
-#
-#                                 if not video_url:
-#                                     yield f"data: ⚠️ Skipped video (missing URL): {video_title}\n\n"
-#                                     continue
-#
-#                                 full_url = entry.get('url')
-#
-#                                 if video_title.lower() in ['unknown title', 'unknown']:
-#                                     parsed = urlparse(full_url)
-#                                     last_segment = parsed.path.rstrip('/').split('/')[-1] or 'untitled'
-#                                     video_title = last_segment
-#
-#
-#                                 if os.path.exists(DOWNLOAD_FILE):
-#                                     with open(DOWNLOAD_FILE, 'r', encoding='utf-8') as f:
-#                                         try:
-#                                             entries = json.load(f)
-#                                             if not isinstance(entries, list):
-#                                                 entries = []
-#                                         except json.JSONDecodeError:
-#                                             entries = []
-#
-#                                 existing_urls = {entry.get('url') for entry in entries}
-#
-#                                     # Step 2: Append new entry
-#                                 if full_url not in existing_urls:
-#                                     entries.append({
-#                                         "file": video_title,
-#                                         "url": full_url,
-#                                         "duration": duration
-#                                     })
-#                                     existing_urls.add(full_url)
-#
-#                                 # Step 3: Write updated list back to file
-#                                 with open(DOWNLOAD_FILE, 'w', encoding='utf-8') as f:
-#                                     json.dump(entries, f, indent=4)
-#
-#                                 yield f"data: ✅ Added: {video_title}\n\n"
-#
-#                         else:
-#                             yield f"data: ⚠️ Not a playlist: {url}\n\n"
-#                 except Exception as ve:
-#                     yield f"data: ❌ Error processing {url}: {str(ve).splitlines()[0]}\n\n"
-#
-#
-#                 time.sleep(0.2)
-#
-#                 yield f"data: ▶️ Reached Playlist end: {url}\n\n"
-#
-#                 with open(PLAYLIST_PROCESS_FILE, 'a', encoding='utf-8') as out:
-#                     log_time = datetime.datetime.now()
-#                     log_time = log_time.strftime('%Y-%m-%d %H:%M')
-#                     out.write(f'{log_time} {name} {url}\n')
-#
-#                 with open(PLAYLIST_FILE, 'w', encoding='utf-8') as f:
-#                     json.dump(playlist_json, f, indent=4)
-#
-#
-#         except Exception as e:
-#             yield f"data: 🚫 Fatal error: {str(e)}\n\n"
-#
-#         yield "data: ✅ Done.\n\n"
-#
-#     return Response(stream_with_context(generate()), content_type='text/event-stream')
 
 @app.route('/execute/playlist/<file>')
 def execute_playlist_file(file):
@@ -585,110 +505,6 @@ def execute_playlist_file(file):
         yield f"data: REDIRECT /run/thumbnail-generator/{download_to}\n\n"
 
     return Response(stream_with_context(generate(file)), content_type='text/event-stream')
-#
-# @app.route('/execute/download')
-# def execute_download():
-#     logging.basicConfig(level=logging.DEBUG)
-#     ansi_escape = re.compile(r'\x1b\[[0-9;]*m')
-#     def generate():
-#         messages = queue.Queue()
-#
-#         yield "data: Starting Downloading process...\n\n"
-#         logging.info("data: Downloading started")
-#         try:
-#             with open(DOWNLOAD_FILE, 'r', encoding='utf-8') as f:
-#                 download_json = json.load(f)
-#
-#             total = len(download_json)
-#             current_index = 0
-#
-#             # Step 2: Process each line one by one
-#             for file in download_json:
-#                 current_index += 1
-#                 url = file["url"]  # filename URL
-#                 name = file["file"] if file["file"] else "unnamed"
-#
-#                 # Progress hook to receive download updates
-#                 def progress_hook(d):
-#                     if d['status'] == 'downloading':
-#                         percent = ansi_escape.sub('', d.get('_percent_str', '').strip())
-#                         speed = ansi_escape.sub('', d.get('_speed_str', '').strip())
-#                         eta = ansi_escape.sub('', d.get('_eta_str', '').strip())
-#
-#                         messages.put(f"data: Downloading: {percent} at {speed}, ETA {eta} [{current_index}/{total}]\n\n")
-#                     elif d['status'] == 'finished':
-#                         messages.put(f"data: ✅ Download complete: {d['filename']}\n\n")
-#                     elif d['status'] == 'error':
-#                         messages.put("data: ❌ Download failed.\n\n")
-#                 ydl_opts = {
-#                     'format': 'best',
-#                     'outtmpl': f'{download_to}%(title)s.%(ext)s',
-#                     'postprocessors': [{'key': 'FFmpegMetadata'}],
-#                     'addmetadata': True,
-#                     'progress_hooks': [progress_hook],  # ✅ This is critical!
-#                 }
-#
-#
-#                 try:
-#                     def download_and_drain():
-#                         messages.put(f"data: ▶️ Downloading ({current_index}/{total}): {name}, {url}\n\n")
-#                         try:
-#                             with YoutubeDL(ydl_opts) as ydl:
-#                                 ydl.download([url])
-#                             # Signal end
-#                             messages.put("done")
-#                         except Exception as e:
-#                             print(e)
-#                             messages.put(f"data: ❌ Download failed.\n\n")
-#                             messages.put(f"data: {str(e).splitlines()[0]}\n\n")
-#                             messages.put("error")
-#
-#                     # Start download in a thread to allow streaming progress
-#                     thread = threading.Thread(target=download_and_drain)
-#                     thread.start()
-#
-#
-#                     # Stream messages from queue in real-time
-#                     while True:
-#                         try:
-#                             msg = messages.get(timeout=1)
-#                         except queue.Empty:
-#                             yield f"data: waiting...\n\n"
-#                             continue
-#                         if msg == "done":
-#                             download_json.pop(0)
-#                             break
-#                         if msg == "error":
-#                             retry.append({
-#                                 'url': url,
-#                                 'file': name
-#                             })
-#                             yield f"data: Error: {msg}\n\n"
-#                             download_json.pop(0)
-#                             break
-#                         yield msg
-#
-#                     with open(PROCESS_FILE, 'a', encoding='utf-8') as out:
-#                         time = datetime.datetime.now()
-#                         time = time.strftime('%Y-%m-%d %H:%M')
-#                         out.write(f"{time} {name} {url}\n")
-#
-#                     # Remove the finished URL from the list
-#                     with open(DOWNLOAD_FILE, 'w', encoding='utf-8') as f:
-#                         json.dump(download_json, f, indent=4)
-#
-#                 except Exception as ve:
-#                     yield f"data: ❌ Error processing {name},{url}: {str(ve).splitlines()[0]}\n\n"
-#                     logging.error(f"data: Error processing {name},{url}: {str(ve).splitlines()[0]}")
-#
-#         except Exception as ve:
-#             yield f"data: 🚫 Fatal error: {str(ve)}\n\n"
-#             logging.error(f"data: Fatal error: {str(ve)}")
-#
-#         yield "data: ✅ Done.\n\n"
-#         logging.info("data: Done.")
-#
-#     return Response(stream_with_context(generate()), content_type='text/event-stream')
 
 @app.route('/execute/download/<file>')
 def execute_download_file(file):
@@ -709,8 +525,9 @@ def execute_download_file(file):
                 os.makedirs(os.path.dirname(download_to), exist_ok=True)
             except OSError as err:
                 print(f"data: Error: {str(err)}\n\n")
+            downloadAS = filef['downloadAs'] if filef['downloadAs'] else "%(ext)s"
 
-    def generate(download_file, download_to):
+    def generate(download_file, download_to, downloadAs):
         messages = queue.Queue()
         retry = []
 
@@ -730,6 +547,7 @@ def execute_download_file(file):
                 current_index += 1
                 url = file["url"]  # filename URL
                 name = file["file"] if file["file"] else "unnamed"
+                downloadAs = file["downloadAs"] if file["downloadAs"] and file['downloadAs'] != "default" else downloadAs
 
                 # Progress hook to receive download updates
                 def progress_hook(d):
@@ -762,7 +580,7 @@ def execute_download_file(file):
 
                 ydl_opts = {
                     'format': 'best',
-                    'outtmpl': f'{download_to}%(title)s.%(ext)s',
+                    'outtmpl': f'{download_to}%(title)s.{downloadAs}',
                     'postprocessors': [{'key': 'FFmpegMetadata'}],
                     'addmetadata': True,
                     'progress_hooks': [progress_hook],  # ✅ This is critical!
@@ -891,7 +709,7 @@ def execute_download_file(file):
 
                     ydl_opts = {
                         'format': 'best',
-                        'outtmpl': f'{download_to}%(title)s.%(ext)s',
+                        'outtmpl': f'{download_to}%(title)s.{downloadAs}',
                         'postprocessors': [{'key': 'FFmpegMetadata'}],
                         'addmetadata': True,
                         'progress_hooks': [progress_hook],  # ✅ This is critical!
@@ -963,7 +781,7 @@ def execute_download_file(file):
         logging.info("data: Done.")
         stop_flags.pop(file_name, None)
         active_downloads.pop(file_name, None)
-    return Response(stream_with_context(generate(file, download_to)), content_type='text/event-stream')
+    return Response(stream_with_context(generate(file, download_to, downloadAS)), content_type='text/event-stream')
 
 
 @app.route('/execute/stop/<file>', methods=['POST'])
