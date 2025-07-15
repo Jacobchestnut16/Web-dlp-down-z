@@ -10,6 +10,7 @@
         {% endif %}
     </title>
 
+<!--    <link rel="stylesheet" href="style.css">-->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 
 </head>
@@ -31,7 +32,6 @@
             </td>
         </tr>
     </table>
-
 </nav>
 
 <h1>Edit
@@ -39,35 +39,28 @@
     {{name}}
     {% endif %}
 </h1>
-<table>
-    <tr><td>
-        <h2>Groups</h2>
-        <nav>
-            <table>
-                <tr>
-                    <td><a href="/edit/default-playlist.json">Edit Default</a></td>
 
-                    {% for entry in funfiles %}
-                    <td><a href="/edit/{{entry.file}}-playlist.json">Edit {{(entry.file)}}</a></td>
-                    {% endfor %}
-                    <td><a href="/create-file">New group</a></td>
-                </tr>
-            </table>
-        </nav>
-    </td></tr>
+<div class="container">
+    <div class="title"><h2>Groups</h2></div>
+    <div class="new"><a href="/create-file">Add group</a></div>
+    <div class="row">
+        <div class="nav-item"><a href="/edit/default-playlist.json">Edit Default</a></div>
+        {% for entry in funfiles %}
+        <div class="nav-item"><a href="/edit/{{entry.file}}-playlist.json">Edit {{(entry.file)}}</a></div>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="sep"></div>
+
+<div class="container">
     {% if type == "playlist" %}
-    <tr><td>
-        <nav>
-            <table>
-                <tr>
-                    <td>
-                        <a href="/edit/{{name}}-download.json">View Downloadable files</a>
 
-                    </td>
-                </tr>
-            </table></nav></td></tr>
+    <div class="row">
+        <a class="bar" href="/edit/{{name}}-download.json">View Downloadable files</a>
+    </div>
     {% if name != 'default' %}
-    <tr><td>
+    <div class="row">
         <form action="/save/installs" method="post">
             <input type="hidden" name="file" value="{{where}}">
             <label>Installs to: </label>
@@ -80,95 +73,175 @@
             </select>
             <button type="submit">Save</button>
         </form>
-    </td></tr>
+    </div>
     {% endif %}
     {% elif type == "download" %}
-    <tr><td>
-        <nav>
-            <table>
-                <tr>
-                    <td>
-                        <a href="/edit/{{name}}-playlist.json">View Playlists</a>
-                    </td>
-                </tr>
-            </table></nav></td></tr>
+    <div class="row"><a class="bar" href="/edit/{{name}}-playlist.json">View Playlists</a></div>
     {% if name != 'default' %}
 
-    <tr><td>
+    <div class="row">
         <form action="/save/installs" method="post">
             <input type="hidden" name="file" value="{{where}}">
             <label>Installs to: </label>
             <input type="text" name="install" value="{{install}}">
             <button type="submit">Save</button>
-        </form>
-    </td></tr>
+        </form></div>
     {% endif %}
+    <div class="row">
+            <form action="/save/downloadAs" method="post">
+                <input type="hidden" name="file" value="{{where}}">
+                <label>Download as: </label>
+                <select name="downloadAs">
+                    {% if downloadAs %}
+                    {% if downloadAs == 'web_default' %}
+                    <option value="web_default">Default from website</option>
+                    {% else %}
+                    <option value="{{downloadAs}}">{{downloadAs}}</option>
+                    {% endif %}
+                    {% else %}
+                    <option value="web_default">Default from website</option>
+                    {% endif %}
+                    <option value="web_default">Default from website</option>
+                    <option value="3gp">3gp</option>
+                    <option value="aac">aac</option>
+                    <option value="flv">flv</option>
+                    <option value="m4a">m4a</option>
+                    <option value="mp3">mp3</option>
+                    <option value="mp4">mp4</option>
+                    <option value="ogg">ogg</option>
+                    <option value="wav">wav</option>
+                    <option value="webm">webm</option>
+                </select>
+                <button type="submit">Save</button>
+            </form>
+    </div>
     {% endif %}
-</table>
+</div>
+
 
 {% if where %}
 <form method="post" action="/group/action">
     <input type="hidden" name="file" value="{{where}}">
-    <div style="margin-top: 10px;">
-        <table>
-            <thead>
-            <tr><td><h2>Add item</h2></td></tr>
-            <tr>
-                <th>Filename</th>
-                <th>Website</th>
-                <th></th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr>
-                <td>
+    <div class="container">
+        <div class="title"><h2>Add item</h2></div>
+        <div class="row">
+            <div class="col">
+                <div class="item">Filename</div>
+                <div class="item">
                     <input type="text" id="new-filename" placeholder="Filename">
-                </td>
-                <td>
+                </div>
+            </div>
+            <div class="col">
+                <div class="item">Website</div>
+                <div class="item">
                     <input type="text" id="new-website" placeholder="Website">
-                </td>
-                <td>
+                </div>
+            </div>
+            <div class="col">
+                <div class="item"></div>
+                <div class="item">
                     <button type="button" onclick="addEntry()">Add</button>
-                </td>
-            </tr>
-            </tbody>
-        </table>
-
+                </div>
+            </div>
+        </div>
     </div>
-    <table id="entries-list">
-        <thead>
-        <tr><td><h2 style="text-wrap: nowrap">{{(where.split('.'))[0].capitalize()}} Items (Total saved: {{files}}):</h2></td></tr>
-        <tr>
-            <th></th>
-            <th>Thumbnail</th>
-            <th>Duration</th>
-            <th>Filename</th>
-            <th>Website</th>
-            <th>Actions</th>
-        </tr>
-        </thead>
-        <tbody id="sortable-table">
+
+    <div id="entries-list" class="container">
+        <div class="title"><h2 style="text-wrap: nowrap">{{(where.split('.'))[0].capitalize()}} Items (Total saved: {{files}}):</h2></div>
+
+        <div class="row">
+
+            <div class="col drag" id="drag">
+                <div>Drag</div>
+
+            </div>
+
+            {% if type == 'download' %}
+            <div class="col thumb-col" id="thumb">
+                <div>Thumbnail</div>
+            </div>
+
+            <div class="col duration" id="duration">
+                <div>Duration</div>
+            </div>
+            {% endif %}
+
+            <div class="col filename" id="filename">
+                <div>Filename</div>
+            </div>
+
+            <div class="col website" id="website">
+                <div>Website</div>
+            </div>
+
+            {% if type == 'download' %}
+            <div class="col format" id="format">
+                <div>Download Format</div>
+            </div>
+            {% endif %}
+
+            <div class="col actions" id="actions">
+                <div>Actions</div>
+            </div>
+
+        </div>
+
         {% for entry in entries %}
-        <tr title="{{ entry.description }}">
-            <td class="drag-handle">☰</td>
-            <td>
+        <div class="row" title="{{ entry.description }}">
+            <div class="col drag-handle drag">
+                <span class="drag-icon">☰</span>
+            </div>
+
+            {% if type == 'download' %}
+            <div class="col thumb-col">
+                <input type="hidden" name="thumb" value="{{ entry.thumbnail }}">
                 <picture class="thumbnail">
                     <source srcset="{{ entry.thumbnail }}" type="image/{{ entry.thumbnail.rsplit('.', 1)[-1] }}">
                     <img src="{{ entry.thumbnail }}" alt="Thumbnail for {{ entry.filename }}">
                 </picture>
-            </td>
-            <td>{{ entry.duration }}
+            </div>
+
+            <div class="col duration">
+                {{ entry.duration }}
                 <input type="hidden" name="description" value="{{ entry.description }}">
                 <input type="hidden" name="duration" value="{{ entry.duration }}">
-            </td>
-            <td><input type="text" name="filename" value="{{ entry.filename }}"></td>
-            <td><input type="text" name="website" value="{{ entry.website }}"></td>
-            <td><button type="button" onclick="removeEntry(this)">Remove</button></td>
-        </tr>
+            </div>
+            {% endif %}
+
+            <div class="col filename">
+                <input type="text" name="filename" value="{{ entry.filename }}">
+            </div>
+
+            <div class="col website">
+                <input type="text" name="website" value="{{ entry.website }}">
+            </div>
+
+            {% if type == 'download' %}
+            <div class="col small format">
+                <select name="downloadAs">
+                    <option value="{{ entry.downloadAs }}">{{ entry.downloadAs }}</option>
+                    <option value="default">Default</option>
+                    <option value="3gp">3gp</option>
+                    <option value="aac">aac</option>
+                    <option value="flv">flv</option>
+                    <option value="m4a">m4a</option>
+                    <option value="mp3">mp3</option>
+                    <option value="mp4">mp4</option>
+                    <option value="ogg">ogg</option>
+                    <option value="wav">wav</option>
+                    <option value="webm">webm</option>
+                </select>
+            </div>
+            {% endif %}
+
+            <div class="col small actions">
+                <button type="button" onclick="removeEntry(this)">Remove</button>
+            </div>
+        </div>
         {% endfor %}
-        </tbody>
-    </table>
-    <br>
+
+
+    </div>
 
     <div class="fixed-bottom-bar">
         <button type="submit" name="action" value="save">Save</button>
@@ -183,112 +256,90 @@
 <p>Select a file</p>
 {% endif %}
 
+<div class="buffer"></div>
+
 <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const thumbs = document.querySelectorAll('img.thumb');
-        thumbs.forEach(img => {
-            img.onerror = () => {
-                img.style.display = 'none';
-            };
-        });
-    });
-    new Sortable(document.getElementById('sortable-table'), {
+    new Sortable(document.getElementById('entries-list'), {
         animation: 150,
         ghostClass: 'sortable-ghost',
-        handle: 'td', // Make the whole row draggable
+        handle: '.drag-handle', // updated to your new drag handle
+        draggable: '.row' // now dragging .row divs instead of <tr>
     });
 
     function removeEntry(button) {
-        const row = button.closest('tr');
-        row.remove();
+        const row = button.closest('.row');
+        if (row) {
+            row.remove();
+        }
     }
+
 
     function addEntry() {
-        const filename = document.getElementById('new-filename').value.trim();
-        const website = document.getElementById('new-website').value.trim();
+    const filename = document.getElementById('new-filename').value.trim();
+    const website = document.getElementById('new-website').value.trim();
 
-        if (!filename || !website) {
-            alert("Both fields are required.");
-            return;
-        }
-
-        const tbody = document.getElementById('sortable-table');
-
-        const newRow = document.createElement('tr');
-        newRow.innerHTML = `
-            <td class="drag-handle">☰</td>
-            <td><img class="thumb" src="" alt="Thumbnail"></td>
-            <td><input type="text" name="filename" value="${filename}"></td>
-            <td><input type="text" name="website" value="${website}"></td>
-            <td><button type="button" onclick="removeEntry(this)">Remove</button></td>
-        `;
-        tbody.appendChild(newRow);
-
-        document.getElementById('new-filename').value = '';
-        document.getElementById('new-website').value = '';
+    if (!filename || !website) {
+        alert("Both fields are required.");
+        return;
     }
+
+    const container = document.getElementById('entries-list');
+
+    const newRow = document.createElement('div');
+    newRow.classList.add('row');
+
+    newRow.innerHTML = `
+        <div class="col drag-handle drag">
+            <span class="drag-icon">☰</span>
+        </div>
+
+        {% if type == 'download' %}
+        <div class="col thumb-col">
+            <img class="thumb" src="" alt="Thumbnail"/>
+        </div>
+        <div class="col duration">
+            <input type="hidden" name="description" value="">
+            <input type="hidden" name="duration" value="">
+        </div>
+        {% endif %}
+
+        <div class="col filename">
+            <input type="text" name="filename" value="${filename}">
+        </div>
+        <div class="col website">
+            <input type="text" name="website" value="${website}">
+        </div>
+
+        {% if type == 'download' %}
+        <div class="col small format">
+            <select name="downloadAs">
+                <option value="default">Default</option>
+                <option value="3gp">3gp</option>
+                <option value="aac">aac</option>
+                <option value="flv">flv</option>
+                <option value="m4a">m4a</option>
+                <option value="mp3">mp3</option>
+                <option value="mp4">mp4</option>
+                <option value="ogg">ogg</option>
+                <option value="wav">wav</option>
+                <option value="webm">webm</option>
+            </select>
+        </div>
+        {% endif %}
+
+        <div class="col small actions">
+            <button type="button" onclick="removeEntry(this)">Remove</button>
+        </div>
+    `;
+
+    container.appendChild(newRow);
+
+    // Clear inputs
+    document.getElementById('new-filename').value = '';
+    document.getElementById('new-website').value = '';
+}
+
 </script>
-
-
-{{mark}}
-
-<style>
-    .drag-handle {
-        cursor: grab;
-        font-size: 18px;
-        text-align: center;
-        width: 30px;
-        user-select: none;
-    }
-
-    .sortable-ghost {
-        opacity: 0.4;
-        background: #ffffcc;
-    }
-
-    .fixed-bottom-bar {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        padding: 10px 20px;
-        background-color: #f8f9fa;
-        border-top: 1px solid #ddd;
-        text-align: right;
-        z-index: 1000;
-        display: flex;
-        gap: 20px;
-    }
-
-
-    .tooltip-container {
-        position: relative;
-        display: inline-block;
-    }
-
-    .tooltip-container .tooltip-text {
-        visibility: hidden;
-        opacity: 0;
-        width: 200px;
-        background-color: #333;
-        color: #fff;
-        text-align: left;
-        border-radius: 4px;
-        padding: 8px;
-        position: absolute;
-        z-index: 10;
-        bottom: 110%; /* or use left/right/top as needed */
-        left: 50%;
-        transform: translateX(-50%);
-        transition: opacity 0.2s;
-        font-size: 0.9em;
-    }
-
-    .tooltip-container:hover .tooltip-text {
-        visibility: visible;
-        opacity: 1;
-    }
-</style>
 
 
 </body>

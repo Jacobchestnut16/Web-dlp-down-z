@@ -1,162 +1,259 @@
-/* Basic Reset & Font */
+* {
+    margin: 0;
+    padding: 0;
+    font-family: "Fira Code", monospace;
+    font-size: 15px;
+    box-sizing: border-box;
+}
+
 body {
-  font-family: Arial, sans-serif;
-  margin: 20px;
-  background: #f9f9f9;
-  color: #333;
+    width: 90%;
+    margin: 0 auto;
+    background-color: #f4f8fb;
+    color: #333;
 }
 
-/* Navigation */
-nav table {
-  width: 100%;
-  margin-bottom: 20px;
-  border-collapse: collapse;
+a{
+    background: #53acef;
+    text-decoration: none;
+    color: #fff;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-weight: bold;
+    min-width: 100px;
+    text-align: center;
+    transition: background 0.3s ease, transform 0.2s;
 }
 
-nav td {
-  padding: 8px 12px;
-  text-align: center;
-  background: #007BFF;
-  border: 1px solid #0056b3;
-}
-
-nav td a {
-  color: white;
-  text-decoration: none;
-  font-weight: bold;
-  display: block;
-}
-
-nav td a:hover {
-  background: #0056b3;
-  color: #fff;
-  border-radius: 4px;
-}
-
-/* Headings */
 h1 {
-  margin-bottom: 20px;
-  font-weight: 700;
-  color: #222;
+    font-size: xxx-large;
+    margin: 20px 0;
 }
 
 h2 {
-  margin: 10px 0;
-  font-weight: 600;
+    font-size: xx-large;
+    margin: 10px 0;
 }
 
-/* Tables */
-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-bottom: 20px;
-  background: white;
-  box-shadow: 0 0 8px rgba(0,0,0,0.1);
+h3 {
+    font-size: x-large;
+    margin: 10px 0;
 }
 
-thead th {
-  background: #007BFF;
-  color: white;
-  padding: 10px;
-  text-align: left;
-  border-bottom: 2px solid #0056b3;
+/* Navigation */
+nav {
+    width: 100%;
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 20px;
+    margin-top: 10px;
+    flex-wrap: wrap;
 }
 
-tbody tr:nth-child(even) {
-  background: #f4f7fb;
+nav a {
+    background: #53acef;
+    text-decoration: none;
+    color: #fff;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-weight: bold;
+    min-width: 100px;
+    text-align: center;
+    transition: background 0.3s ease, transform 0.2s;
 }
 
-tbody td {
-  padding: 8px 12px;
-  vertical-align: middle;
-  border-bottom: 1px solid #ddd;
+nav a:hover {
+    background: #3a95d9;
+    transform: translateY(-2px);
 }
 
-/* Inputs inside table */
-input[type="text"] {
-  width: 95%;
-  padding: 6px 8px;
-  border: 1px solid #ccc;
-  border-radius: 3px;
-  font-size: 14px;
-  box-sizing: border-box;
-  transition: border-color 0.2s ease-in-out;
+nav * {
+    margin: 5px;
 }
 
-input[type="text"]:focus {
-  border-color: #007BFF;
-  outline: none;
+/* Container / List Section */
+div.container {
+  position: relative;
+    width: 100%;
+    background: rgba(152, 206, 248, 0.2);
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+div.title {
+    width: 100%;
+    background: #6cbcf4;
+    color: white;
+    padding: 10px 15px;
+    border-radius: 6px 6px 0 0;
+    text-align: center;
+    font-weight: bold;
+    font-size: 1.4em;
+}
+
+div.row {
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    padding: 8px 0;
+    border-bottom: 1px solid #ccc;
+    align-items: center;
+}
+
+div.col {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 5px;
+}
+
+/* Columns specific widths */
+.drag {
+    width: 45px;
+}
+
+.thumb-col {
+    width: 155px;
+}
+
+.duration {
+    width: 70px;
+}
+
+.filename {
+    width: 27%;
+}
+
+.website {
+    width: 35%;
+}
+
+.format {
+    width: 115px;
+}
+
+.actions {
+    width: 70px;
+}
+
+/* Thumbnail */
+.thumbnail, .thumb {
+    max-width: 150px;
+    border-radius: 5px;
+    overflow: hidden;
+    border: 1px solid #ccc;
+}
+
+.thumbnail img {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+/* Input Styling */
+input[type="text"],
+select {
+    width: 100%;
+    padding: 6px 10px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    font-size: 14px;
+    transition: border-color 0.2s;
+}
+
+input[type="text"]:focus,
+select:focus {
+    border-color: #53acef;
+    outline: none;
 }
 
 /* Buttons */
 button {
-  background: #007BFF;
-  color: white;
-  border: none;
-  padding: 6px 12px;
-  font-size: 14px;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
+    background-color: #53acef;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    font-size: 14px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s;
 }
 
 button:hover {
-  background: #0056b3;
+    background-color: #3a95d9;
+    transform: translateY(-1px);
 }
 
 button:active {
-  background: #003d80;
+    background-color: #2f7fbe;
+}
+
+/* New Button Circle */
+div.new {
+    position: absolute;
+    right: 10px;
+    top: 10px;
+}
+
+div.new a {
+    border-radius: 25px;
+    font-size: 20px;
+    padding: 10px 15px;
+    background-color: #4db8ff;
+    color: white;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+/* Bottom bar */
+.fixed-bottom-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    padding: 12px 20px;
+    background-color: #ffffff;
+    border-top: 1px solid #ddd;
+    z-index: 1000;
+    display: flex;
+    justify-content: flex-end;
+    gap: 20px;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
 }
 
 /* Drag Handle */
 .drag-handle {
-  cursor: grab;
-  font-size: 18px;
-  text-align: center;
-  width: 30px;
-  user-select: none;
+    cursor: grab;
+    user-select: none;
+    font-size: 18px;
 }
 
-/* Ghost class during drag */
+/* Ghost row during drag */
 .sortable-ghost {
-  opacity: 0.5 !important;
-  background: #fff3cd !important;
+    opacity: 0.5 !important;
+    background: #fff3cd !important;
 }
 
-.item{
-  font-weight: bold;
+/* Small spacing block at end */
+div.buffer {
+    height: 100px;
 }
 
-/* Add item form */
-div > input[type="text"] {
-  width: 200px;
-  margin-right: 10px;
-}
-
-.thumbnail, .thumb {
-  max-width: 150px;
-  display: block;
-}
-
-.thumbnail img {
-  width: 100%;
-  height: auto;
-  display: block;
-}
-
-
-/* Responsive tweak */
-@media (max-width: 600px) {
-  nav table, table {
-    font-size: 14px;
-  }
-
-  input[type="text"] {
+/* Separator Line */
+div.sep {
+    border-top: 1px solid #ccc;
     width: 100%;
-  }
+    margin: 10px 0;
+}
 
-  div > input[type="text"] {
-    width: 100%;
-    margin-bottom: 8px;
-  }
+/* Utility: item row */
+div.item {
+    display: inline-flex;
+    margin: 5px 10px;
+}
+.bar{
+    width: 90%;
+    margin: 0 auto;
 }
