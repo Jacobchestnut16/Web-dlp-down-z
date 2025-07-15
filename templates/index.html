@@ -9,50 +9,111 @@
 <body>
 
 <nav>
-<table>
-  <tr>
-    <td>
-      <a href="/edit">Edit</a>
-    </td>
-    <td>
-      <a href="/execute">Execute</a>
-    </td>
-      <td>
-          <a href="/config">Settings</a>
-      </td>
-  </tr>
-</table>
+    <table>
+        <tr>
+            <td>
+                <a href="/edit">Edit</a>
+            </td>
+            <td>
+                <a href="/execute">Execute</a>
+            </td>
+            <td>
+                <a href="/config">Settings</a>
+            </td>
+        </tr>
+    </table>
 </nav>
 
 <h1>Web-dlp-down-z</h1>
 
-<h2>Set up</h2>
-<p>Open config and add your download path:
-    Windows- C:\user\downloads
-    Linux/Macos- ~/Downloads
-</p>
-<h2>Starting to use (edit)</h2>
-<p>
-    Edit has 2 files playlist and downloads. Downloads is individual links that will be downloaded,
-    you may remove anything you do not wanted downloaded or reorder the list so something will be downloaded first.
-    Playlist this servers as links that go to playlists, & must be a valid playlist link containing downloadable content.
-    The name space is there to server as logs and read-ability this does not contribute to the file name.
-</p>
-<h2>Starting to use (Execute)</h2>
-<p>
-    Execute will download via YT-DLP. Execute has two files process playlist and downloads.
-    Process playlist(s) will take any playlist in the edit file and break them down to their individual link(s),
-    this will also auto name it based on their web-link name. This does not use the progress bar, the log
-    output will indicate when it has finished.
-    Downloads will download all files in the order present from the last save of the downloads file, provided a
-    log output and the eta progress bar.
-</p>
-<h2>View</h2>
-<p>
-    View contains the log files for playlist and download, these are part of the project and cannot be stored
-    outside of the project folder. These log the completion of all links, even if they fail they will end up here.
-    This is a fail safe so that if you lost something you can return it to the download file.
-</p>
+{% if ffmpeg %}
+System is ready to begin
+
+<div class="container">
+
+    <p>Web-dlp-down-z is a Flask-based media scraping and management tool powered by yt-dlp. Download individual files or full playlists, view logs, and manage downloads easily—all from your browser. No coding required!</p>
+
+    <h2>⚙️ Setup Tips</h2>
+    <p>
+        Set your download path in the settings tab.
+
+    <ul>
+        <li>
+            Windows: C:\Users\your-username\Downloads
+        </li>
+        <li>
+            Linux/macOS: ~/Downloads
+
+        </li>
+        <li>
+            Logs and file lists are auto-managed but configurable.
+
+        </li>
+    </ul>
+    </p>
+    <h2>✍️ Manage Your Downloads</h2>
+    <p>
+        Edit Tab: Organize downloads into groups. Save changes or Save & Execute to start downloading.
+
+        Install Options:
+    <ul>
+        <li>
+            Playlists install to paired download lists.
+
+        </li>
+        <li>
+            Downloads install to the path you set in settings.
+        </li>
+    </ul>
+    Each entry has a namespace (label for you and logs, this does not name the final file).
+    </p>
+    <p>
+    <h2>
+        ✅ Features
+
+    </h2>
+    <ul>
+        <li>
+            Download individual videos or entire playlists
+
+        </li>
+        <li>
+            Auto-sort by source site and uploader
+        </li>
+        <li>
+            Auto-retry failed downloads
+        </li>
+        <li>
+            Format selection (mp3, mp4, webm, etc.)
+        </li>
+        <li>
+            Cross-platform: Windows, Linux, macOS
+        </li>
+    </ul>
+
+
+
+
+    </p>
+</div>
+
+
+{% else %}
+<h2><a href="https://ffmpeg.org/download.html" class="external-link">ffmpeg</a> needs to be installed:</h2>
+<div class="container">
+    <h2>Windows</h2>
+    <p>Open command prompt and enter `winget install ffmpeg`</p>
+    <h2>Macos (homebrew recommended install)</h2>
+    <p>Open the terminal and enter `brew install ffmpeg`</p>
+    <h2>Linux</h2>
+    <h3>Debian based</h3>
+    <p>In the terminal run `sudo apt update && sudo apt install ffmpeg`</p>
+    <h3>Fedora</h3>
+    <p>In the terminal run `sudo dnf install ffmpeg`</p>
+    <h3>Arch/Manjaro</h3>
+    <p>In the terminal run `sudo pacman -S ffmpeg`</p>
+</div>
+{% endif %}
 
 </body>
 </html>

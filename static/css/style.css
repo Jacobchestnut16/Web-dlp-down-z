@@ -257,3 +257,15 @@ div.item {
     width: 90%;
     margin: 0 auto;
 }
+.external-link{
+    background: none;
+    color: #333;
+    text-decoration: underline;
+    font-family: inherit;
+    font-size: inherit;
+    padding: inherit;
+    margin: inherit;
+}
+ul{
+    margin-left: 40px;
+}

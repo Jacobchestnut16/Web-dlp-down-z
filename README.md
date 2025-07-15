@@ -120,8 +120,8 @@ The `view` section can be found in the settings tab with the top menu
 
 ---
 
-## Whats New v1.3.4:
-
+## Whats New v1.3.5:
+- This is everything from version 1.3.4, but the updater is patched
 - New download selections
   - Formats: `3gp`, `aac`, `flv`, `m4a`, `mp3`, `mp4`, `ogg`, `wav`, `webm`
   - Using this feature may seem confusing, here are the steps:

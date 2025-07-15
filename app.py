@@ -1,4 +1,5 @@
 import os
+import subprocess
 import time
 import queue
 import threading
@@ -29,7 +30,14 @@ stop_flags = {}        # {file_name: threading.Event}
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    def is_ffmpeg_installed():
+        try:
+            # Try running `ffmpeg -version`
+            subprocess.run(["ffmpeg", "-version"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
+            return True
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            return False
+    return render_template('index.html', ffmpeg=is_ffmpeg_installed())
 
 @app.route('/view')
 def view_index():
@@ -1088,6 +1096,13 @@ def update_now():
                 add_files.remove("app.py")
         else:
             app_need_update = False
+
+        for file_needs_removed in clean_files:
+            while file_needs_removed in add_files:
+                add_files.remove(file_needs_removed)
+            while file_needs_removed in update_files:
+                update_files.remove(file_needs_removed)
+
         needs_updating = {'add': add_files, 'merge': update_files, 'remove': clean_files,
                           'app_need_update': app_need_update}
         if os.path.exists('system_update.json'):
