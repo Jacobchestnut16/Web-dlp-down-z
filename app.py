@@ -746,11 +746,16 @@ def execute_download_file(file):
                     else:
                         print(d["status"])
 
-                with YoutubeDL({'quiet': True}) as ydl:
-                    info = ydl.extract_info(url, download=False)
-                    description = info.get('description', '').replace('\n', ' ').replace('"', "'")
-                    uploader = info.get('uploader', '')
-                    webpage_url_domain = info.get('webpage_url_domain', '')
+                try:
+                    with YoutubeDL({'quiet': True}) as ydl:
+                        info = ydl.extract_info(url, download=False)
+                        description = info.get('description', '').replace('\n', ' ').replace('"', "'")
+                        uploader = info.get('uploader', '')
+                        webpage_url_domain = info.get('webpage_url_domain', '')
+                except Exception as e:
+                    yield f"data: ❌ Download failed.\n\n"
+                    yield f"data: {str(e).splitlines()[0]}\n\n"
+                    continue
 
                 if HIERARCHY_DIR:
                     download_to = os.path.normpath(
@@ -761,9 +766,8 @@ def execute_download_file(file):
                 yield f"data: Download_dir ^{download_to}\n\n"
 
                 ydl_opts = {
-                    'format': 'best',
+                    'format': 'bestaudio/best' if downloadAs in AUDIO_FORMATS else 'bestvideo+bestaudio/best',
                     'outtmpl': f'{download_to}%(title)s.%(ext)s',
-                    'postprocessors': [{'key': 'FFmpegMetadata'}],
                     'addmetadata': True,
                     'progress_hooks': [progress_hook],  # ✅ This is critical!
                     'postprocessor_args': [
@@ -772,6 +776,23 @@ def execute_download_file(file):
                         '-metadata', f'album={webpage_url_domain}'
                     ]
                 }
+
+                if downloadAs in AUDIO_FORMATS:
+                    ydl_opts.update({
+                        'postprocessors': [{
+                            'key': 'FFmpegExtractAudio',
+                            'preferredcodec': downloadAs,
+                        }, {
+                            'key': 'FFmpegMetadata'
+                        }]
+                    })
+                elif downloadAs in VIDEO_FORMATS:
+                    ydl_opts.update({
+                        'merge_output_format': downloadAs,  # Needed for combining video+audio
+                        'postprocessors': [{
+                            'key': 'FFmpegMetadata'
+                        }]
+                    })
 
 
                 try:
