@@ -1,5 +1,5 @@
 {
-    "version": "1.3.3",
+    "version": "1.3.5.1",
     "versions": [
         {
             "1.3.2": {
@@ -34,6 +34,16 @@
                     "static/css/style.css",
                     "default-config.json",
                     "app.py"
+                ]
+            }
+        },
+        {
+            "1.3.5.1": {
+                "add": [
+                    "static/css/style.css",
+                    "templates/index",
+                    "app.py",
+                    "requirements.txt"
                 ]
             }
         }
