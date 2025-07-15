@@ -609,7 +609,7 @@ def execute_download_file(file):
                 os.makedirs(os.path.dirname(download_to), exist_ok=True)
             except OSError as err:
                 print(f"data: Error: {str(err)}\n\n")
-            downloadAS = filef['downloadAs'] if filef['downloadAs'] else "%(ext)s"
+            downloadAS = filef['downloadAs'] if filef['downloadAs'] else ""
 
     def generate(download_file, download_to, downloadAs):
         messages = queue.Queue()
@@ -663,7 +663,7 @@ def execute_download_file(file):
                 yield f"data: Download_dir ^{download_to}\n\n"
 
                 ydl_opts = {
-                    'format': 'bestaudio/best' if downloadAs in AUDIO_FORMATS else 'bestvideo+bestaudio/best',
+                    'format': 'bestaudio/best' if downloadAs in AUDIO_FORMATS else ('bestvideo+bestaudio/best' if downloadAs in VIDEO_FORMATS else 'best'),
                     'outtmpl': f'{download_to}%(title)s.%(ext)s',
                     'addmetadata': True,
                     'progress_hooks': [progress_hook],  # ✅ This is critical!
@@ -686,6 +686,12 @@ def execute_download_file(file):
                 elif downloadAs in VIDEO_FORMATS:
                     ydl_opts.update({
                         'merge_output_format': downloadAs,  # Needed for combining video+audio
+                        'postprocessors': [{
+                            'key': 'FFmpegMetadata'
+                        }]
+                    })
+                else:
+                    ydl_opts.update({
                         'postprocessors': [{
                             'key': 'FFmpegMetadata'
                         }]
