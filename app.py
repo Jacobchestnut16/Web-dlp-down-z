@@ -551,7 +551,8 @@ def execute_download_file(file):
                 os.makedirs(os.path.dirname(download_to), exist_ok=True)
             except OSError as err:
                 print(f"data: Error: {str(err)}\n\n")
-            downloadAS = filef['downloadAs'] if filef['downloadAs'] else "%(ext)s"
+            downloadAs = filef.get('downloadAs') or ""
+
 
     def generate(download_file, download_to, downloadAs):
         messages = queue.Queue()
@@ -573,7 +574,9 @@ def execute_download_file(file):
                 current_index += 1
                 url = file["url"]  # filename URL
                 name = file["file"] if file["file"] else "unnamed"
-                downloadAs = file["downloadAs"] if file["downloadAs"] and file['downloadAs'] != "default" else downloadAs
+                ds = filef.get('downloadAs') or ""
+                downloadAs = ds if ds else downloadAs
+
 
                 # Progress hook to receive download updates
                 def progress_hook(d):
@@ -590,11 +593,16 @@ def execute_download_file(file):
                     else:
                         print(d["status"])
 
-                with YoutubeDL({'quiet': True}) as ydl:
-                    info = ydl.extract_info(url, download=False)
-                    description = info.get('description', '').replace('\n', ' ').replace('"', "'")
-                    uploader = info.get('uploader', '')
-                    webpage_url_domain = info.get('webpage_url_domain', '')
+                try:
+                    with YoutubeDL({'quiet': True}) as ydl:
+                        info = ydl.extract_info(url, download=False)
+                        description = info.get('description', '').replace('\n', ' ').replace('"', "'")
+                        uploader = info.get('uploader', '')
+                        webpage_url_domain = info.get('webpage_url_domain', '')
+                except Exception as e:
+                    yield f"data: ❌ Download failed.\n\n"
+                    yield f"data: {str(e).splitlines()[0]}\n\n"
+                    continue
 
                 if HIERARCHY_DIR:
                     download_to = os.path.normpath(
@@ -605,7 +613,7 @@ def execute_download_file(file):
                 yield f"data: Download_dir ^{download_to}\n\n"
 
                 ydl_opts = {
-                    'format': 'bestaudio/best' if downloadAs in AUDIO_FORMATS else 'bestvideo+bestaudio/best',
+                    'format': 'bestaudio/best' if downloadAs in AUDIO_FORMATS else ('bestvideo+bestaudio/best' if downloadAs in VIDEO_FORMATS else 'best'),
                     'outtmpl': f'{download_to}%(title)s.%(ext)s',
                     'addmetadata': True,
                     'progress_hooks': [progress_hook],  # ✅ This is critical!
@@ -628,6 +636,12 @@ def execute_download_file(file):
                 elif downloadAs in VIDEO_FORMATS:
                     ydl_opts.update({
                         'merge_output_format': downloadAs,  # Needed for combining video+audio
+                        'postprocessors': [{
+                            'key': 'FFmpegMetadata'
+                        }]
+                    })
+                else:
+                    ydl_opts.update({
                         'postprocessors': [{
                             'key': 'FFmpegMetadata'
                         }]
@@ -822,7 +836,7 @@ def execute_download_file(file):
         logging.info("data: Done.")
         stop_flags.pop(file_name, None)
         active_downloads.pop(file_name, None)
-    return Response(stream_with_context(generate(file, download_to, downloadAS)), content_type='text/event-stream')
+    return Response(stream_with_context(generate(file, download_to, downloadAs)), content_type='text/event-stream')
 
 
 @app.route('/execute/stop/<file>', methods=['POST'])
@@ -1008,7 +1022,7 @@ def fetch_remote_file(url):
     res.raise_for_status()
     return res.text
 
-BASE_URL = 'https://raw.githubusercontent.com/Jacobchestnut16/Web-dlp-down-z/update/'
+BASE_URL = 'https://raw.githubusercontent.com/Jacobchestnut16/Web-dlp-down-z/refs/heads/update/'
 def check_for_updates():
     global BASE_URL
     try:
@@ -1070,7 +1084,8 @@ def update_now():
                     clean_files.extend(value.get('remove', []))
         if "app.py" in add_files:
             app_need_update = True
-            add_files.remove("app.py")
+            while "app.py" in add_files:
+                add_files.remove("app.py")
         else:
             app_need_update = False
         needs_updating = {'add': add_files, 'merge': update_files, 'remove': clean_files,
@@ -1086,37 +1101,54 @@ def update_now():
         for f in add_files:
             if f not in updated:
                 yield f"data: Adding {f}\n\n"
-                dir_path = os.path.dirname(f)
-                if dir_path:
-                    os.makedirs(dir_path, exist_ok=True)
                 try:
-                    with open(f, 'x', encoding='utf-8') as file:
-                        file.write(fetch_remote_file(BASE_URL + f))
-                except FileExistsError:
-                    with open(f, 'w', encoding='utf-8') as file:
-                        file.write(fetch_remote_file(BASE_URL + f))
-                updated['add'].append(f)
-                with open('system_update.json', 'w', encoding='utf-8') as f:
-                    json.dump({"needs_updating": needs_updating, "updated": updated}, f, indent=4)
+                    dir_path = os.path.dirname(f)
+                    if dir_path:
+                        os.makedirs(dir_path, exist_ok=True)
+                    try:
+                        with open(f, 'x', encoding='utf-8') as file:
+                            file.write(fetch_remote_file(BASE_URL + f))
+                    except FileExistsError:
+                        try:
+                            with open(f, 'w', encoding='utf-8') as file:
+                                file.write(fetch_remote_file(BASE_URL + f))
+                        except Exception as e:
+                            yield f"data: {e}\n\n"
+                            continue
+                    except Exception as e:
+                        yield f"data: {e}\n\n"
+                        continue
+                    updated['add'].append(f)
+                    with open('system_update.json', 'w', encoding='utf-8') as f:
+                        json.dump({"needs_updating": needs_updating, "updated": updated}, f, indent=4)
+                except Exception as e:
+                    yield f"Error: adding {f}, {e}\n\n"
         for f in update_files:
             if f not in updated:
-
                 yield f"data: Updating {f}\n\n"
-                merge_json_files(f, fetch_remote_json(BASE_URL + f))
-                updated['merge'].append(f)
-                with open('system_update.json', 'w', encoding='utf-8') as f:
-                    json.dump({"needs_updating": needs_updating, "updated": updated}, f, indent=4)
+                try:
+                    try:
+                        merge_json_files(f, fetch_remote_json(BASE_URL + f))
+                    except Exception as e:
+                        yield f"data: {e}\n\n"
+                    updated['merge'].append(f)
+                    with open('system_update.json', 'w', encoding='utf-8') as f:
+                        json.dump({"needs_updating": needs_updating, "updated": updated}, f, indent=4)
+                except Exception as e:
+                    yield f"Error: updating {f}, {e}\n\n"
         for f in clean_files:
             if f not in updated:
-
                 yield f"data: Removing {f}"
                 try:
-                    os.remove(f)
-                except FileNotFoundError:
-                    yield f"data: File {f} not found, skipping remove\n\n"
-                updated['remove'].append(f)
-                with open('system_update.json', 'w', encoding='utf-8') as f:
-                    json.dump({"needs_updating": needs_updating, "updated": updated}, f, indent=4)
+                    try:
+                        os.remove(f)
+                    except FileNotFoundError:
+                        yield f"data: File {f} not found, skipping remove\n\n"
+                    updated['remove'].append(f)
+                    with open('system_update.json', 'w', encoding='utf-8') as f:
+                        json.dump({"needs_updating": needs_updating, "updated": updated}, f, indent=4)
+                except Exception as e:
+                    yield f"Error: removing {f}, {e}\n\n"
         all_applied = (
                 set(needs_updating['add']) == set(updated['add']) and
                 set(needs_updating['merge']) == set(updated['merge']) and
@@ -1134,6 +1166,11 @@ def update_now():
             os.remove('system_update.json')
         else:
             yield f"data: Update failed.\n\n"
+            yield f"data: add, {set(needs_updating['add']) == set(updated['add'])}.\n\n"
+            yield f"data: add, {needs_updating['add']} == {updated['add']}.\n\n"
+            yield f"data: merge, {set(needs_updating['merge']) == set(updated['merge'])}.\n\n"
+            yield f"data: merge, {needs_updating['merge']} == {updated['merge']}.\n\n"
+            yield f"data: remove, {set(needs_updating['remove']) == set(updated['remove'])}.\n\n"
 
     return Response(stream_with_context(generate()), content_type='text/event-stream')
 
