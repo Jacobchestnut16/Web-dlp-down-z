@@ -926,7 +926,12 @@ def configBackground():
 
     with open('system.json', 'r', encoding='utf-8') as f:
         system = json.load(f)
-        SYSTEM_THEME = system['theme']
+        try:
+            SYSTEM_THEME = system['theme']
+        except Exception as e:
+            system['theme'] = 'default'
+            with open('system.json', 'w', encoding='utf-8') as f:
+                json.dump(system, f, ensure_ascii=False, indent=4)
 
     if str(config['hierarchy']).lower().strip() == 'true':
         HIERARCHY_DIR = True
