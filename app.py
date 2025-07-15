@@ -585,110 +585,10 @@ def execute_playlist_file(file):
         yield f"data: REDIRECT /run/thumbnail-generator/{download_to}\n\n"
 
     return Response(stream_with_context(generate(file)), content_type='text/event-stream')
-#
-# @app.route('/execute/download')
-# def execute_download():
-#     logging.basicConfig(level=logging.DEBUG)
-#     ansi_escape = re.compile(r'\x1b\[[0-9;]*m')
-#     def generate():
-#         messages = queue.Queue()
-#
-#         yield "data: Starting Downloading process...\n\n"
-#         logging.info("data: Downloading started")
-#         try:
-#             with open(DOWNLOAD_FILE, 'r', encoding='utf-8') as f:
-#                 download_json = json.load(f)
-#
-#             total = len(download_json)
-#             current_index = 0
-#
-#             # Step 2: Process each line one by one
-#             for file in download_json:
-#                 current_index += 1
-#                 url = file["url"]  # filename URL
-#                 name = file["file"] if file["file"] else "unnamed"
-#
-#                 # Progress hook to receive download updates
-#                 def progress_hook(d):
-#                     if d['status'] == 'downloading':
-#                         percent = ansi_escape.sub('', d.get('_percent_str', '').strip())
-#                         speed = ansi_escape.sub('', d.get('_speed_str', '').strip())
-#                         eta = ansi_escape.sub('', d.get('_eta_str', '').strip())
-#
-#                         messages.put(f"data: Downloading: {percent} at {speed}, ETA {eta} [{current_index}/{total}]\n\n")
-#                     elif d['status'] == 'finished':
-#                         messages.put(f"data: ✅ Download complete: {d['filename']}\n\n")
-#                     elif d['status'] == 'error':
-#                         messages.put("data: ❌ Download failed.\n\n")
-#                 ydl_opts = {
-#                     'format': 'best',
-#                     'outtmpl': f'{download_to}%(title)s.%(ext)s',
-#                     'postprocessors': [{'key': 'FFmpegMetadata'}],
-#                     'addmetadata': True,
-#                     'progress_hooks': [progress_hook],  # ✅ This is critical!
-#                 }
-#
-#
-#                 try:
-#                     def download_and_drain():
-#                         messages.put(f"data: ▶️ Downloading ({current_index}/{total}): {name}, {url}\n\n")
-#                         try:
-#                             with YoutubeDL(ydl_opts) as ydl:
-#                                 ydl.download([url])
-#                             # Signal end
-#                             messages.put("done")
-#                         except Exception as e:
-#                             print(e)
-#                             messages.put(f"data: ❌ Download failed.\n\n")
-#                             messages.put(f"data: {str(e).splitlines()[0]}\n\n")
-#                             messages.put("error")
-#
-#                     # Start download in a thread to allow streaming progress
-#                     thread = threading.Thread(target=download_and_drain)
-#                     thread.start()
-#
-#
-#                     # Stream messages from queue in real-time
-#                     while True:
-#                         try:
-#                             msg = messages.get(timeout=1)
-#                         except queue.Empty:
-#                             yield f"data: waiting...\n\n"
-#                             continue
-#                         if msg == "done":
-#                             download_json.pop(0)
-#                             break
-#                         if msg == "error":
-#                             retry.append({
-#                                 'url': url,
-#                                 'file': name
-#                             })
-#                             yield f"data: Error: {msg}\n\n"
-#                             download_json.pop(0)
-#                             break
-#                         yield msg
-#
-#                     with open(PROCESS_FILE, 'a', encoding='utf-8') as out:
-#                         time = datetime.datetime.now()
-#                         time = time.strftime('%Y-%m-%d %H:%M')
-#                         out.write(f"{time} {name} {url}\n")
-#
-#                     # Remove the finished URL from the list
-#                     with open(DOWNLOAD_FILE, 'w', encoding='utf-8') as f:
-#                         json.dump(download_json, f, indent=4)
-#
-#                 except Exception as ve:
-#                     yield f"data: ❌ Error processing {name},{url}: {str(ve).splitlines()[0]}\n\n"
-#                     logging.error(f"data: Error processing {name},{url}: {str(ve).splitlines()[0]}")
-#
-#         except Exception as ve:
-#             yield f"data: 🚫 Fatal error: {str(ve)}\n\n"
-#             logging.error(f"data: Fatal error: {str(ve)}")
-#
-#         yield "data: ✅ Done.\n\n"
-#         logging.info("data: Done.")
-#
-#     return Response(stream_with_context(generate()), content_type='text/event-stream')
+
+AUDIO_FORMATS = ['mp3', 'm4a', 'aac', 'opus', 'vorbis', 'wav', 'flac', 'alac']
+VIDEO_FORMATS = ['mp4', 'webm', 'flv', '3gp']
+
 
 @app.route('/execute/download/<file>')
 def execute_download_file(file):
@@ -709,8 +609,9 @@ def execute_download_file(file):
                 os.makedirs(os.path.dirname(download_to), exist_ok=True)
             except OSError as err:
                 print(f"data: Error: {str(err)}\n\n")
+            downloadAS = filef['downloadAs'] if filef['downloadAs'] else "%(ext)s"
 
-    def generate(download_file, download_to):
+    def generate(download_file, download_to, downloadAs):
         messages = queue.Queue()
         retry = []
 
@@ -730,6 +631,7 @@ def execute_download_file(file):
                 current_index += 1
                 url = file["url"]  # filename URL
                 name = file["file"] if file["file"] else "unnamed"
+                downloadAs = file["downloadAs"] if file["downloadAs"] and file['downloadAs'] != "default" else downloadAs
 
                 # Progress hook to receive download updates
                 def progress_hook(d):
@@ -746,16 +648,11 @@ def execute_download_file(file):
                     else:
                         print(d["status"])
 
-                try:
-                    with YoutubeDL({'quiet': True}) as ydl:
-                        info = ydl.extract_info(url, download=False)
-                        description = info.get('description', '').replace('\n', ' ').replace('"', "'")
-                        uploader = info.get('uploader', '')
-                        webpage_url_domain = info.get('webpage_url_domain', '')
-                except Exception as e:
-                    yield f"data: ❌ Download failed.\n\n"
-                    yield f"data: {str(e).splitlines()[0]}\n\n"
-                    continue
+                with YoutubeDL({'quiet': True}) as ydl:
+                    info = ydl.extract_info(url, download=False)
+                    description = info.get('description', '').replace('\n', ' ').replace('"', "'")
+                    uploader = info.get('uploader', '')
+                    webpage_url_domain = info.get('webpage_url_domain', '')
 
                 if HIERARCHY_DIR:
                     download_to = os.path.normpath(
