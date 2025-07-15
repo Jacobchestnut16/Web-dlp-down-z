@@ -1,0 +1,62 @@
+body {
+    background-color: #0e1116; /* Dark, almost black */
+    color: #cfd8dc; /* Soft blue-gray, easy on eyes */
+    font-family: 'Fira Code', 'Courier New', monospace;
+}
+
+a,
+nav a,
+div.nav-item a,
+button {
+    background-color: #1e2a33; /* Cool dark blue-gray */
+    color: #80cbc4; /* Muted cyan */
+    transition: background-color 0.3s ease, transform 0.2s;
+}
+
+a:hover,
+nav a:hover,
+div.nav-item a:hover,
+button:hover {
+    background-color: #29414f;
+    transform: translateY(-2px);
+}
+
+div.container {
+    background: #12171d; /* Slightly lighter than body */
+    border-radius: 6px;
+    border: 1px solid #1f2a33;
+}
+
+div.title {
+    background: #263238; /* Steely dark tone */
+    color: #ffcb6b; /* Warm highlight like Monokai yellow */
+    font-weight: bold;
+}
+
+input[type="text"],
+select {
+    background-color: #1c1f26;
+    border: 1px solid #3e4a59;
+    color: #cfd8dc;
+    font-family: inherit;
+}
+
+input[type="text"]:focus,
+select:focus {
+    border-color: #80cbc4;
+    outline: none;
+}
+
+.fixed-bottom-bar {
+    background-color: #12171d;
+    border-top: 1px solid #1f2a33;
+}
+
+div.new a {
+    background-color: #ff5370; /* Vibrant pink/red accent */
+    color: #ffffff;
+}
+
+.sortable-ghost {
+    background: #2a2e38 !important;
+}

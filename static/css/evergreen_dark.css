@@ -1,0 +1,58 @@
+body {
+    background-color: #121212;
+    color: #dcdcdc;
+}
+
+a,
+nav a,
+div.nav-item a,
+button {
+    background-color: #2f4f4f; /* Dark muted green */
+    color: #f0f0f0;
+    transition: background-color 0.3s ease, transform 0.2s;
+}
+
+a:hover,
+nav a:hover,
+div.nav-item a:hover,
+button:hover {
+    background-color: #264040; /* Slightly darker on hover */
+    transform: translateY(-2px);
+}
+
+div.container {
+    background: #1a1a1a;
+    border-radius: 8px;
+}
+
+div.title {
+    background: #2f4f4f;
+    color: #f0f0f0;
+}
+
+input[type="text"],
+select {
+    background-color: #2a2a2a;
+    border: 1px solid #555;
+    color: #dcdcdc;
+}
+
+input[type="text"]:focus,
+select:focus {
+    border-color: #2f4f4f;
+    outline: none;
+}
+
+.fixed-bottom-bar {
+    background-color: #1a1a1a;
+    border-top: 1px solid #333;
+}
+
+div.new a {
+    background-color: #d87d4a; /* Muted orange for accent */
+    color: #f0f0f0;
+}
+
+.sortable-ghost {
+    background: #3b3b3b !important;
+}

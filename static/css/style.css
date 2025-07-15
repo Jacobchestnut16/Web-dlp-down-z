@@ -109,6 +109,20 @@ div.col {
     align-items: center;
     padding: 5px;
 }
+div.nav-item{
+    margin: 5px;
+}
+div.nav-item a{
+    background: #2a77b3;
+    text-decoration: none;
+    color: #ffffff;
+    padding: 6px 16px;
+    border-radius: 8px;
+    font-weight: bold;
+    min-width: 100px;
+    text-align: center;
+    transition: background 0.3s ease, transform 0.2s;
+}
 
 /* Columns specific widths */
 .drag {
