@@ -190,20 +190,35 @@ def new():
 
 @app.route('/group/action', methods=['GET', 'POST'])
 def group_action():
-    def save(file, websites, filenames, description, duration, downloadAs):
+    def save(file, websites, filenames, description, duration, downloadAs, thumbnail):
         try:
             entries = []
             seen_urls = set()
-            for name, site in zip(filenames, websites, description, duration, downloadAs):
+            print("items lookup")
+            for name, site, desc, dur, dow, thumb in zip(filenames, websites, description, duration, downloadAs, thumbnail):
+                print(name, site, desc, dur, dow, thumb)
                 if site not in seen_urls:
-                    entries.append({
-                        'file': name,
-                        'url': site,
-                        'description': description,
-                        'duration': duration,
-                        'downloadAs': downloadAs
-                    })
+                    if thumb:
+                        entries.append({
+                            'file': name,
+                            'url': site,
+                            'description': desc,
+                            'duration': dur,
+                            'downloadAs': dow,
+                            'thumbnail': thumb,
+                        })
+                        print(f"saved {name}, with thumbnail {thumb}")
+                    else:
+                        entries.append({
+                            'file': name,
+                            'url': site,
+                            'description': desc,
+                            'duration': dur,
+                            'downloadAs': dow,
+                        })
+                        print(f"saved {name}, without thumbnail {thumb}")
                     seen_urls.add(site)
+                    print("----------------------------------------------------------------------------------------")
             with open(file, 'w', encoding='utf-8') as f:
                 json.dump(entries, f, indent=4)
         except Exception as e:
@@ -216,9 +231,7 @@ def group_action():
                 if site not in seen_urls:
                     entries.append({
                         'file': name,
-                        'url': site,
-                        'description': description,
-                        'duration': duration
+                        'url': site
                     })
                     seen_urls.add(site)
             with open(file, 'w', encoding='utf-8') as f:
@@ -233,8 +246,17 @@ def group_action():
         description = request.form.getlist('description')
         duration = request.form.getlist('duration')
         downloadAs = request.form.getlist('downloadAs')
+        thumb = request.form.getlist('thumb')
         type = (file.split('-')[1]).split('.')[0]
-        save(file, websites, filenames, description, duration, downloadAs) if type == 'download' else save_playlist(file, websites, filenames)
+        if type == 'playlist':
+            print("setting")
+            save_playlist(file, websites, filenames)
+            print("saved playlist")
+        if type == 'download':
+            print("setting")
+            print(websites,'\n',filenames)
+            save(file, websites, filenames, description, duration, downloadAs, thumb)
+            print("saved download")
 
         if action == 'execute':
             return redirect(url_for('execute_installation', file=file))
@@ -290,7 +312,7 @@ def saveAS():
     if name != 'default':
         for item in config:
             if item['file'] == name:
-                config['downloadAs'] = downloadAs
+                item['downloadAs'] = downloadAs
     else:
         config['downloadAs'] = downloadAs
     with open(FILE_CONFIG if name != 'default' else 'default-config.json', 'w', encoding='utf-8') as f:
@@ -506,6 +528,10 @@ def execute_playlist_file(file):
 
     return Response(stream_with_context(generate(file)), content_type='text/event-stream')
 
+AUDIO_FORMATS = ['mp3', 'm4a', 'aac', 'opus', 'vorbis', 'wav', 'flac', 'alac']
+VIDEO_FORMATS = ['mp4', 'webm', 'flv', '3gp']
+
+
 @app.route('/execute/download/<file>')
 def execute_download_file(file):
     logging.basicConfig(level=logging.DEBUG)
@@ -579,9 +605,8 @@ def execute_download_file(file):
                 yield f"data: Download_dir ^{download_to}\n\n"
 
                 ydl_opts = {
-                    'format': 'best',
-                    'outtmpl': f'{download_to}%(title)s.{downloadAs}',
-                    'postprocessors': [{'key': 'FFmpegMetadata'}],
+                    'format': 'bestaudio/best' if downloadAs in AUDIO_FORMATS else 'bestvideo+bestaudio/best',
+                    'outtmpl': f'{download_to}%(title)s.%(ext)s',
                     'addmetadata': True,
                     'progress_hooks': [progress_hook],  # ✅ This is critical!
                     'postprocessor_args': [
@@ -591,6 +616,22 @@ def execute_download_file(file):
                     ]
                 }
 
+                if downloadAs in AUDIO_FORMATS:
+                    ydl_opts.update({
+                        'postprocessors': [{
+                            'key': 'FFmpegExtractAudio',
+                            'preferredcodec': downloadAs,
+                        }, {
+                            'key': 'FFmpegMetadata'
+                        }]
+                    })
+                elif downloadAs in VIDEO_FORMATS:
+                    ydl_opts.update({
+                        'merge_output_format': downloadAs,  # Needed for combining video+audio
+                        'postprocessors': [{
+                            'key': 'FFmpegMetadata'
+                        }]
+                    })
 
                 try:
                     def download_and_drain():

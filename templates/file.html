@@ -194,6 +194,7 @@
 
             {% if type == 'download' %}
             <div class="col thumb-col">
+                <input type="hidden" name="thumb" value="{{ entry.thumbnail if entry.thumbnail else '' }}">
                 <picture class="thumbnail">
                     <source srcset="{{ entry.thumbnail }}" type="image/{{ entry.thumbnail.rsplit('.', 1)[-1] }}">
                     <img src="{{ entry.thumbnail }}" alt="Thumbnail for {{ entry.filename }}">
