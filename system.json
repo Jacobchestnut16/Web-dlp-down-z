@@ -4,8 +4,7 @@
         {
             "1.3.2": {
                 "add":[
-                    "app.py",
-                    "thumb.html"
+                    "app.py"
                 ]
             }
         },
@@ -19,7 +18,6 @@
                     "templates/file.html",
                     "templates/index.html",
                     "templates/install.html",
-                    "templates/thumb.html",
                     "templates/view.html",
                     "templates/update.html"
                 ],
