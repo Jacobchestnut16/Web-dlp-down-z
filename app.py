@@ -609,7 +609,8 @@ def execute_download_file(file):
                 os.makedirs(os.path.dirname(download_to), exist_ok=True)
             except OSError as err:
                 print(f"data: Error: {str(err)}\n\n")
-            downloadAS = filef['downloadAs'] if filef['downloadAs'] else ""
+            downloadAs = filef.get('downloadAs') or ""
+
 
     def generate(download_file, download_to, downloadAs):
         messages = queue.Queue()
@@ -631,7 +632,9 @@ def execute_download_file(file):
                 current_index += 1
                 url = file["url"]  # filename URL
                 name = file["file"] if file["file"] else "unnamed"
-                downloadAs = file["downloadAs"] if file["downloadAs"] and file['downloadAs'] != "default" else downloadAs
+                ds = filef.get('downloadAs') or ""
+                downloadAs = ds if ds else downloadAs
+
 
                 # Progress hook to receive download updates
                 def progress_hook(d):
@@ -648,11 +651,16 @@ def execute_download_file(file):
                     else:
                         print(d["status"])
 
-                with YoutubeDL({'quiet': True}) as ydl:
-                    info = ydl.extract_info(url, download=False)
-                    description = info.get('description', '').replace('\n', ' ').replace('"', "'")
-                    uploader = info.get('uploader', '')
-                    webpage_url_domain = info.get('webpage_url_domain', '')
+                try:
+                    with YoutubeDL({'quiet': True}) as ydl:
+                        info = ydl.extract_info(url, download=False)
+                        description = info.get('description', '').replace('\n', ' ').replace('"', "'")
+                        uploader = info.get('uploader', '')
+                        webpage_url_domain = info.get('webpage_url_domain', '')
+                except Exception as e:
+                    yield f"data: ❌ Download failed.\n\n"
+                    yield f"data: {str(e).splitlines()[0]}\n\n"
+                    continue
 
                 if HIERARCHY_DIR:
                     download_to = os.path.normpath(
@@ -696,7 +704,6 @@ def execute_download_file(file):
                             'key': 'FFmpegMetadata'
                         }]
                     })
-
 
                 try:
                     def download_and_drain():
@@ -815,7 +822,7 @@ def execute_download_file(file):
 
                     ydl_opts = {
                         'format': 'best',
-                        'outtmpl': f'{download_to}%(title)s.%(ext)s',
+                        'outtmpl': f'{download_to}%(title)s.{downloadAs}',
                         'postprocessors': [{'key': 'FFmpegMetadata'}],
                         'addmetadata': True,
                         'progress_hooks': [progress_hook],  # ✅ This is critical!
@@ -887,7 +894,7 @@ def execute_download_file(file):
         logging.info("data: Done.")
         stop_flags.pop(file_name, None)
         active_downloads.pop(file_name, None)
-    return Response(stream_with_context(generate(file, download_to)), content_type='text/event-stream')
+    return Response(stream_with_context(generate(file, download_to, downloadAs)), content_type='text/event-stream')
 
 
 @app.route('/execute/stop/<file>', methods=['POST'])
