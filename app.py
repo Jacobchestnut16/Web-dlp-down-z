@@ -1230,9 +1230,10 @@ def update():
         current = json.load(f)['version']
     update = check_for_updates()
     if update[0] == "Update required":
-        return render_template('update.html', updateTxt=update[0], updateVersion=update[1], current=current)
+        return render_template('update.html', updateTxt=update[0], updateVersion=update[1], current=current,
+                               system_theme=SYSTEM_THEME)
     else:
-        return render_template('update.html', updateTxt=update[0], current=current)
+        return render_template('update.html', updateTxt=update[0], current=current, system_theme=SYSTEM_THEME)
 
 
 
