@@ -430,10 +430,15 @@ def execute_playlist_file(file):
     file_type = ((file.split('-')[1]).split('.'))[0]
     with open(FILE_CONFIG, 'r', encoding='utf-8') as f:
         files = json.load(f)
-    for filef in files:
-        if filef['file'] == file_name:
-            download_to = filef['install-playlist']
-            download_to = os.path.normpath(download_to)
+    if file_type != 'default':
+        for filef in files:
+            if filef['file'] == file_name:
+                download_to = filef['install-playlist']
+    else:
+        download_to = DOWNLOAD_FILE
+
+
+    download_to = os.path.normpath(download_to)
 
     logging.info(f'Flattening to {download_to}')
     def generate(file):
@@ -562,13 +567,20 @@ def execute_download_file(file):
         if filef['file'] == file_name:
             download_to = filef['install-directory']
             download_to = os.path.normpath(download_to)
-            if not download_to.endswith(os.path.sep):
-                download_to += os.path.sep
-            try:
-                os.makedirs(os.path.dirname(download_to), exist_ok=True)
-            except OSError as err:
-                print(f"data: Error: {str(err)}\n\n")
             downloadAs = filef.get('downloadAs') or ""
+    if file_name == "default":
+        download_to = DOWNLOAD_DIR
+        with open('default-config.json', 'r', encoding='utf-8') as f:
+            config = json.load(f)
+        download_to = config.get('downloadAs') or ""
+        download_to = os.path.normpath(download_to)
+
+    if not download_to.endswith(os.path.sep):
+        download_to += os.path.sep
+    try:
+        os.makedirs(os.path.dirname(download_to), exist_ok=True)
+    except OSError as err:
+        print(f"data: Error: {str(err)}\n\n")
 
 
     def generate(download_file, download_to, downloadAs):
