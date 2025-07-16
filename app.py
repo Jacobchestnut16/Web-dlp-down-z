@@ -1147,6 +1147,8 @@ def update_now():
         if os.path.exists('system_update.json'):
             with open('system_update.json', 'r', encoding='utf-8') as f:
                 updated = json.load(f).get("updated", {})
+            with open('system_update.json', 'w', encoding='utf-8') as f:
+                f.write('')
         else:
             updated = {"add": [], "merge": [], "remove": [], "app_need_update": app_need_update}
         with open('system_update.json', 'w', encoding='utf-8') as f:
