@@ -55,11 +55,12 @@
                     "templates/thumb.html",
                     "templates/update.html",
                     "templates/view.html",
+                    "templates/file.html",
                     "app.py",
                     "requirements.txt"
                 ]
             }
         }
     ],
-    "theme": "code.css"
+    "theme": "code_dark.css"
 }
