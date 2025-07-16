@@ -1,0 +1,59 @@
+
+body {
+    background-color: #e8e6e1;
+    color: #2d2d2d;
+}
+
+a,
+nav a,
+div.nav-item a,
+button {
+    background-color: #6b9080;
+    color: white;
+    transition: background-color 0.3s ease, transform 0.2s;
+}
+
+a:hover,
+nav a:hover,
+div.nav-item a:hover,
+button:hover {
+    background-color: #55786d;
+    transform: translateY(-2px);
+}
+
+div.container {
+    background: #f4f1ed;
+    border-radius: 8px;
+}
+
+div.title {
+    background: #6b9080;
+    color: white;
+}
+
+input[type="text"],
+select {
+    background-color: #f4f1ed;
+    border: 1px solid #c2beb6;
+    color: #2d2d2d;
+}
+
+input[type="text"]:focus,
+select:focus {
+    border-color: #6b9080;
+    outline: none;
+}
+
+.fixed-bottom-bar {
+    background-color: #f4f1ed;
+    border-top: 1px solid #c2beb6;
+}
+
+div.new a {
+    background-color: #f4a261;
+    color: #2d2d2d;
+}
+
+.sortable-ghost {
+    background: #fcefd8 !important;
+}

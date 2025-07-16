@@ -129,6 +129,14 @@ The `view` section can be found in the settings tab with the top menu
       - this only works if each item is set to `default` as well
     - setting individual items to download in different formats you will select teh format in the format column and press save
     - if you set the whole page to download eg. `mp3`, but set a few items as another format thats not `default` nor in this case `mp3` it will download as that format over the set page download as. 
+- Themes
+  - Themes are pre-released in its beta version
+    - default - blue and white
+    - evergreen - green and white
+    - evergreen dark - green and black
+    - code - code like theme
+    - code dark - dark code like theme
+  - Future direction themes will be available for download and customization as a drag and drop style, currently they are hard coded in
 ---
 
 ## 📌 Requirements

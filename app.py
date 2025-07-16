@@ -26,6 +26,7 @@ SYSTEM_CONFIG = 'system.json'
 HIERARCHY_DIR = False
 active_downloads = {}  # {file_name: threading.Thread}
 stop_flags = {}        # {file_name: threading.Event}
+SYSTEM_THEME = 'default'
 
 
 @app.route('/')
@@ -46,7 +47,7 @@ def view_index():
 def view(file):
     with open(file, 'r', encoding='utf-8') as f:
         contents = [line.strip() for line in f if line.strip()]
-    return render_template('view.html', file_contents=contents, where=file[:-4])
+    return render_template('view.html', file_contents=contents, where=file[:-4], system_theme=SYSTEM_THEME)
 
 
 @app.route('/edit')
@@ -59,7 +60,7 @@ def edit_index():
             funfiles.append({'file': item['file'], 'install-playlist': item['install-playlist'], 'install-directory': item['install-directory']})
 
     print("FILES LOADED:", funfiles)
-    return render_template('file.html', funfiles=funfiles)
+    return render_template('file.html', funfiles=funfiles, system_theme=SYSTEM_THEME)
 @app.route('/edit/<file>', methods=['GET', 'POST'])
 def edit(file):
 
@@ -139,7 +140,8 @@ def edit(file):
         downloadAs = data['downloadAs']
 
     return render_template('file.html', entries=entries, where=file, funfiles=funfiles, type=type,
-                           install=install, installOpts=installOpts, name=named, files=cnt, downloadAs=(downloadAs if downloadAs else 'web_default'))
+                           install=install, installOpts=installOpts, name=named, files=cnt,
+                           downloadAs=(downloadAs if downloadAs else 'web_default'), system_theme=SYSTEM_THEME)
 
 @app.route('/save/installs', methods=['POST'])
 def save_installs():
@@ -165,7 +167,7 @@ def save_installs():
 
 @app.route('/create-file')
 def create_file():
-    return render_template('createfile.html')
+    return render_template('createfile.html', system_theme=SYSTEM_THEME)
 
 @app.route('/new', methods=['GET', 'POST'])
 def new():
@@ -329,7 +331,7 @@ def saveAS():
 
 @app.route('/run/thumbnail-generator/<file>')
 def run_thumbnail_generator(file):
-    return render_template('thumb.html', file=file)
+    return render_template('thumb.html', file=file, system_theme=SYSTEM_THEME)
 
 @app.route('/execute')
 def execute_index():
@@ -338,13 +340,13 @@ def execute_index():
         files = json.load(f)
         for item in files:
             funfiles.append({'name': item['file'].split('-')[0]})
-    return render_template('execute.html', download_dir=DOWNLOAD_DIR, funfiles=funfiles)
+    return render_template('execute.html', download_dir=DOWNLOAD_DIR, funfiles=funfiles, system_theme=SYSTEM_THEME)
 
 @app.route('/execute/install/<file>')
 def execute_installation(file):
     type=(file.split('-')[1]).split('.')[0]
     print('downloading',type,file)
-    return render_template('install.html', file=file, type=type , download_dir=DOWNLOAD_DIR)
+    return render_template('install.html', file=file, type=type , download_dir=DOWNLOAD_DIR, system_theme=SYSTEM_THEME)
 
 @app.route('/execute/thumbnail/<file>')
 def execute_thumbnail(file):
@@ -861,16 +863,24 @@ def config():
     for key, value in config.items():
         print(key, value)
         entries.append({'filename': key, 'website': value})
-    return render_template('config.html', entries=entries, where='config')
+    with open('system.json', 'r') as f:
+        system = json.load(f)
+    system_theme = system['theme']
+
+    return render_template('config.html', entries=entries, where='config', system_theme=system_theme)
 
 @app.route('/setConfigSettings')
 def setConfigSettings():
-    global DOWNLOAD_DIR, DOWNLOAD_FILE, PROCESS_FILE, DOWNLOAD_FILE, PROCESS_FILE,HIERARCHY_DIR
+    global DOWNLOAD_DIR, DOWNLOAD_FILE, PROCESS_FILE, DOWNLOAD_FILE, PROCESS_FILE,HIERARCHY_DIR,SYSTEM_THEME
     with open('config.json', 'r', encoding='utf-8') as f:
         config = json.load(f)
     logfile = config['web-dlp-down-z Log file']
     logging.basicConfig(filename=logfile, level=logging.DEBUG)
     logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+
+    with open('system.json', 'r', encoding='utf-8') as f:
+        system = json.load(f)
+        SYSTEM_THEME = system['theme']
 
     if str(config['hierarchy']).lower().strip() == 'true':
         HIERARCHY_DIR = True
@@ -907,12 +917,21 @@ def setConfigSettings():
     return redirect(url_for('config'))
 
 def configBackground():
-    global DOWNLOAD_DIR, DOWNLOAD_FILE, PROCESS_FILE, DOWNLOAD_FILE, PROCESS_FILE,HIERARCHY_DIR
+    global DOWNLOAD_DIR, DOWNLOAD_FILE, PROCESS_FILE, DOWNLOAD_FILE, PROCESS_FILE, HIERARCHY_DIR, SYSTEM_THEME
     with open('config.json', 'r', encoding='utf-8') as f:
         config = json.load(f)
     logfile = config['web-dlp-down-z Log file']
     logging.basicConfig(filename=logfile, level=logging.DEBUG)
     logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+
+    with open('system.json', 'r', encoding='utf-8') as f:
+        system = json.load(f)
+        try:
+            SYSTEM_THEME = system['theme']
+        except Exception as e:
+            system['theme'] = 'default'
+            with open('system.json', 'w', encoding='utf-8') as f:
+                json.dump(system, f, ensure_ascii=False, indent=4)
 
     if str(config['hierarchy']).lower().strip() == 'true':
         HIERARCHY_DIR = True
@@ -1017,6 +1036,20 @@ def legacy_read():
     filtered_data[0]['Version'] = updated_to
     with open(SYSTEM_CONFIG, 'w', encoding='utf-8') as f:
         json.dump(filtered_data, f, indent=4)
+
+
+@app.route('/set/theme', methods=['GET', 'POST'])
+def set_theme():
+    if request.method == 'POST':
+        theme = request.form['theme']
+        global SYSTEM_THEME
+        SYSTEM_THEME = theme
+        with open('system.json', 'r', encoding='utf-8') as f:
+            system = json.load(f)
+        system['theme'] = theme
+        with open('system.json', 'w', encoding='utf-8') as f:
+            json.dump(system, f, indent=4)
+    return redirect(url_for('config'))
 
 
 
@@ -1197,9 +1230,10 @@ def update():
         current = json.load(f)['version']
     update = check_for_updates()
     if update[0] == "Update required":
-        return render_template('update.html', updateTxt=update[0], updateVersion=update[1], current=current)
+        return render_template('update.html', updateTxt=update[0], updateVersion=update[1], current=current,
+                               system_theme=SYSTEM_THEME)
     else:
-        return render_template('update.html', updateTxt=update[0], current=current)
+        return render_template('update.html', updateTxt=update[0], current=current, system_theme=SYSTEM_THEME)
 
 
 

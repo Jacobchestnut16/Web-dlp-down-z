@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Config</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/'+system_theme) }}">
 
 </head>
 <body>
@@ -34,8 +35,22 @@
     </div></div>
 </nav>
 
-<h1>Config File</h1>
+<div class="container">
+    <h1>Theme</h1>
+    <form action="/set/theme" method="post">
+        <select name="theme" id="">
+            <option value="{{ system_theme }}">{{ system_theme.split('.')[0].capitalize() }}</option>
+            <option value="default">Default</option>
+            <option value="evergreen.css">Evergreen</option>
+            <option value="evergreen_dark.css">Evergreen dark</option>
+            <option value="code.css">Code</option>
+            <option value="code_dark.css">Code dark</option>
+        </select>
+        <button type="submit">Set Theme</button>
+    </form>
+</div>
 
+<h1>Config File</h1>
 
 {% if where %}
 <form method="post" action="/save">

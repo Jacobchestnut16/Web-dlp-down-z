@@ -1,0 +1,62 @@
+body {
+    background-color: #fdfdfd; /* Very light background */
+    color: #2e3440; /* Dark gray-blue for body text */
+    font-family: 'Fira Code', 'Courier New', monospace;
+}
+
+a,
+nav a,
+div.nav-item a,
+button {
+    background-color: #e0e8f0; /* Soft blue-gray */
+    color: #005f87; /* Developer-style blue */
+    transition: background-color 0.3s ease, transform 0.2s;
+}
+
+a:hover,
+nav a:hover,
+div.nav-item a:hover,
+button:hover {
+    background-color: #cbddea;
+    transform: translateY(-2px);
+}
+
+div.container {
+    background: #ffffff;
+    border-radius: 6px;
+    border: 1px solid #dde3ea;
+}
+
+div.title {
+    background: #e0e8f0;
+    color: #d35400; /* Solarized-like orange */
+    font-weight: bold;
+}
+
+input[type="text"],
+select {
+    background-color: #f4f7f9;
+    border: 1px solid #ccd3db;
+    color: #2e3440;
+    font-family: inherit;
+}
+
+input[type="text"]:focus,
+select:focus {
+    border-color: #005f87;
+    outline: none;
+}
+
+.fixed-bottom-bar {
+    background-color: #ffffff;
+    border-top: 1px solid #ccd3db;
+}
+
+div.new a {
+    background-color: #ffb347; /* Warm orange highlight */
+    color: #2e3440;
+}
+
+.sortable-ghost {
+    background: #f3f9ff !important;
+}
