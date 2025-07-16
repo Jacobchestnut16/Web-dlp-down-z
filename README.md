@@ -113,30 +113,25 @@ The `view` section can be found in the settings tab with the top menu
 - Supports individual and playlist-based downloads
 - Editable queue with save-and-execute option
 - Auto-retry for failed downloads
+- Choosing download formats
+  - `3gp`, `aac`, `flv`, `m4a`, `mp3`, `mp4`, `ogg`, `wav`, `webm`
 - Automatic file naming from source titles
 - Automatic metadata generation if provided by the source
 - Logs and grouping for better management
 - Cross-platform support (Windows, Linux, macOS)
+- Web themes
+  - default - blue and white
+  - evergreen - green and white
+  - evergreen dark - green and black
+  - code - code like theme
+  - code dark - dark code like theme
 
 ---
 
-## Whats New v1.3.5:
-- This is everything from version 1.3.4, but the updater is patched
-- New download selections
-  - Formats: `3gp`, `aac`, `flv`, `m4a`, `mp3`, `mp4`, `ogg`, `wav`, `webm`
-  - Using this feature may seem confusing, here are the steps:
-    - to select how the whole list downloads set the download as at the top of the download list page
-      - this only works if each item is set to `default` as well
-    - setting individual items to download in different formats you will select teh format in the format column and press save
-    - if you set the whole page to download eg. `mp3`, but set a few items as another format thats not `default` nor in this case `mp3` it will download as that format over the set page download as. 
-- Themes
-  - Themes are pre-released in its beta version
-    - default - blue and white
-    - evergreen - green and white
-    - evergreen dark - green and black
-    - code - code like theme
-    - code dark - dark code like theme
-  - Future direction themes will be available for download and customization as a drag and drop style, currently they are hard coded in
+## Whats New v1.3.6:
+- New update function, applies updates with less errors and preserves more settings
+- Ability to remove groups
+- Fix for the default download and default playlist they now install and execute correctly
 ---
 
 ## 📌 Requirements
