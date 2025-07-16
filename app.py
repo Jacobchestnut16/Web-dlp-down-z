@@ -196,7 +196,7 @@ def new():
                 }
             )
             f.write(json.dumps(data))
-        return redirect(url_for('edit', file=file))
+        return redirect(url_for('edit', file=file+'-playlist.json'))
 
 
 @app.route('/group/action', methods=['GET', 'POST'])
@@ -205,9 +205,7 @@ def group_action():
         try:
             entries = []
             seen_urls = set()
-            print("items lookup")
             for name, site, desc, dur, dow, thumb in zip(filenames, websites, description, duration, downloadAs, thumbnail):
-                print(name, site, desc, dur, dow, thumb)
                 if site not in seen_urls:
                     if thumb:
                         entries.append({
@@ -218,7 +216,6 @@ def group_action():
                             'downloadAs': dow,
                             'thumbnail': thumb,
                         })
-                        print(f"saved {name}, with thumbnail {thumb}")
                     else:
                         entries.append({
                             'file': name,
@@ -227,9 +224,7 @@ def group_action():
                             'duration': dur,
                             'downloadAs': dow,
                         })
-                        print(f"saved {name}, without thumbnail {thumb}")
                     seen_urls.add(site)
-                    print("----------------------------------------------------------------------------------------")
             with open(file, 'w', encoding='utf-8') as f:
                 json.dump(entries, f, indent=4)
         except Exception as e:
@@ -260,25 +255,36 @@ def group_action():
         thumb = request.form.getlist('thumb')
         type = (file.split('-')[1]).split('.')[0]
         if type == 'playlist':
-            print("setting")
             save_playlist(file, websites, filenames)
-            print("saved playlist")
         if type == 'download':
-            print("setting")
-            print(websites,'\n',filenames)
             save(file, websites, filenames, description, duration, downloadAs, thumb)
-            print("saved download")
 
         if action == 'execute':
             return redirect(url_for('execute_installation', file=file))
+        elif action == 'remove':
+            return redirect(url_for('remove_group', group=file.split('-')[0]))
         else:
             if type == 'download':
                 return redirect(url_for('run_thumbnail_generator', file=file))
             elif type == 'playlist':
                 return redirect(url_for('edit', file=file))
 
-
-
+@app.route('/group/remove/<group>')
+def remove_group(group):
+    with open(FILE_CONFIG, 'r', encoding='utf-8') as f:
+        data = json.load(f)
+    for f in range(len(data)):
+        if group == data[f]['file']:
+            logging.log(logging.INFO, 'remove', data[f]['file'],"at",f)
+            try:
+                data.pop(f)
+                os.remove(group+'-playlist.json')
+                os.remove(group + '-download.json')
+            except Exception as e:
+                logging.log(logging.ERROR, e)
+    with open(FILE_CONFIG, 'w', encoding='utf-8') as f:
+        json.dump(data, f, indent=4)
+    return redirect(url_for('edit_index'))
 
 @app.route('/save', methods=['GET', 'POST'])
 def save():
