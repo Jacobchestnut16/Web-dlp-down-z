@@ -1,6 +1,6 @@
 body {
-    background-color: #0e1116; /* Dark, almost black */
-    color: #cfd8dc; /* Soft blue-gray, easy on eyes */
+    background-color: #fdfdfd; /* Very light background */
+    color: #2e3440; /* Dark gray-blue for body text */
     font-family: 'Fira Code', 'Courier New', monospace;
 }
 
@@ -8,8 +8,8 @@ a,
 nav a,
 div.nav-item a,
 button {
-    background-color: #1e2a33; /* Cool dark blue-gray */
-    color: #80cbc4; /* Muted cyan */
+    background-color: #e0e8f0; /* Soft blue-gray */
+    color: #005f87; /* Developer-style blue */
     transition: background-color 0.3s ease, transform 0.2s;
 }
 
@@ -17,46 +17,46 @@ a:hover,
 nav a:hover,
 div.nav-item a:hover,
 button:hover {
-    background-color: #29414f;
+    background-color: #cbddea;
     transform: translateY(-2px);
 }
 
 div.container {
-    background: #12171d; /* Slightly lighter than body */
+    background: #ffffff;
     border-radius: 6px;
-    border: 1px solid #1f2a33;
+    border: 1px solid #dde3ea;
 }
 
 div.title {
-    background: #263238; /* Steely dark tone */
-    color: #ffcb6b; /* Warm highlight like Monokai yellow */
+    background: #e0e8f0;
+    color: #d35400; /* Solarized-like orange */
     font-weight: bold;
 }
 
 input[type="text"],
 select {
-    background-color: #1c1f26;
-    border: 1px solid #3e4a59;
-    color: #cfd8dc;
+    background-color: #f4f7f9;
+    border: 1px solid #ccd3db;
+    color: #2e3440;
     font-family: inherit;
 }
 
 input[type="text"]:focus,
 select:focus {
-    border-color: #80cbc4;
+    border-color: #005f87;
     outline: none;
 }
 
 .fixed-bottom-bar {
-    background-color: #12171d;
-    border-top: 1px solid #1f2a33;
+    background-color: #ffffff;
+    border-top: 1px solid #ccd3db;
 }
 
 div.new a {
-    background-color: #ff5370; /* Vibrant pink/red accent */
-    color: #ffffff;
+    background-color: #ffb347; /* Warm orange highlight */
+    color: #2e3440;
 }
 
 .sortable-ghost {
-    background: #2a2e38 !important;
+    background: #f3f9ff !important;
 }
