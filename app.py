@@ -1159,8 +1159,11 @@ def update_now():
                 set(needs_updating['remove']) == set(updated['remove'])
         )
         if all_applied:
+            with open('system.json', 'r', encoding='utf-8') as f:
+                system_features = json.load(f)
+            system_features['version'] = remote_json['version']
             with open('system.json', 'w', encoding='utf-8') as f:
-                json.dump({"version": remote_json['version']}, f, indent=4)
+                json.dump(system_features, f, indent=4)
             if app_need_update:
                 with open('app.py', 'w', encoding='utf-8') as f:
                     f.write(fetch_remote_file(BASE_URL + 'app.py'))
