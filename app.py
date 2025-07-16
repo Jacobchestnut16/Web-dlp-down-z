@@ -38,7 +38,7 @@ def index():
             return True
         except (subprocess.CalledProcessError, FileNotFoundError):
             return False
-    return render_template('index.html', ffmpeg=is_ffmpeg_installed())
+    return render_template('index.html', ffmpeg=is_ffmpeg_installed(), system_theme=SYSTEM_THEME)
 
 @app.route('/view')
 def view_index():
@@ -153,12 +153,13 @@ def save_installs():
         where = request.form['file']
         name = (where.split('-'))[0]
         type = ((where.split('-'))[1].split('.'))[0]
+        logging.info(f"{name} install {type}: {install}")
         with open (FILE_CONFIG, 'r', encoding='utf-8') as f:
             config = json.load(f)
         for item in config:
             if item['file'] == name:
                 if type == 'download':
-                    item['install-download'] = install
+                    item['install-directory'] = install
                 elif type == 'playlist':
                     item['install-playlist'] = install
         with open(FILE_CONFIG, 'w', encoding='utf-8') as f:
@@ -865,7 +866,13 @@ def config():
         entries.append({'filename': key, 'website': value})
     with open('system.json', 'r') as f:
         system = json.load(f)
-    system_theme = system['theme']
+    try:
+        system_theme = system['theme']
+    except Exception as e:
+        system_theme = 'default'
+        system['theme'] = 'default'
+        with open('system.json', 'w', encoding='utf-8') as f:
+            json.dump(system, f, ensure_ascii=False, indent=4)
 
     return render_template('config.html', entries=entries, where='config', system_theme=system_theme)
 
@@ -880,7 +887,13 @@ def setConfigSettings():
 
     with open('system.json', 'r', encoding='utf-8') as f:
         system = json.load(f)
+    try:
         SYSTEM_THEME = system['theme']
+    except Exception as e:
+        system['theme'] = 'default'
+        with open('system.json', 'w', encoding='utf-8') as f:
+            json.dump(system, f, ensure_ascii=False, indent=4)
+    logging.info(f"web setConfigSettings: SYSTEM theme: {SYSTEM_THEME}")
 
     if str(config['hierarchy']).lower().strip() == 'true':
         HIERARCHY_DIR = True
@@ -926,12 +939,13 @@ def configBackground():
 
     with open('system.json', 'r', encoding='utf-8') as f:
         system = json.load(f)
-        try:
-            SYSTEM_THEME = system['theme']
-        except Exception as e:
-            system['theme'] = 'default'
-            with open('system.json', 'w', encoding='utf-8') as f:
-                json.dump(system, f, ensure_ascii=False, indent=4)
+    try:
+        SYSTEM_THEME = system['theme']
+    except Exception as e:
+        system['theme'] = 'default'
+        with open('system.json', 'w', encoding='utf-8') as f:
+            json.dump(system, f, ensure_ascii=False, indent=4)
+    logging.info(f"web setConfigSettings: SYSTEM theme: {SYSTEM_THEME}")
 
     if str(config['hierarchy']).lower().strip() == 'true':
         HIERARCHY_DIR = True
@@ -965,78 +979,6 @@ def configBackground():
         logging.info(f"configBackground: Playlist Processed File {PLAYLIST_PROCESS_FILE}")
     except Exception as e:
         logging.error(f"configBackground: could not open Playlist Processed File: {str(e)}")
-
-
-def legacy_read():
-    def config_file():
-        with open('config.json', 'r', encoding='utf-8') as f:
-            config = json.load(f)
-        print(config)
-        config["hierarchy"] = "false"
-        with open('config.json', 'w', encoding='utf-8') as f:
-            json.dump(config, f, ensure_ascii=False, indent=4)
-    def file_config():
-        updated_configs = []
-        read = []
-        with open(FILE_CONFIG, 'r', encoding='utf-8') as f:
-            configs = json.load(f)
-        for config in configs:
-            if config['file'] not in read:
-                playlist = None
-                download = None
-                if config['type'] == 'playlist':
-                    playlist = config['install']
-                    for f in configs:
-                        if f['file'] == config['file'] and f['type'] == 'download':
-                            download = f['install']
-                elif config['type'] == 'download':
-                    download = config['install']
-                    for f in configs:
-                        if f['file'] == config['file'] and f['type'] == 'playlist':
-                            playlist = f['install']
-                read.append(config['file'])
-                updated_configs.append(
-                    {
-                        'file': config['file'],
-                        'install-playlist': playlist if playlist is not None else config['file']+'-playlist.json',
-                        'install-directory': download if download is not None else DOWNLOAD_DIR,
-                    }
-                )
-                for file_name in [config['file']+'-playlist.json', config['file']+'-download.json']:
-                    try:
-                        with open(file_name, 'x', encoding='utf-8') as f:
-                            data = []
-                            f.write(json.dumps(data))
-                    except FileExistsError:
-                        pass
-        with open(FILE_CONFIG, 'w', encoding='utf-8') as f:
-            json.dump(updated_configs, f, indent=4)
-
-    with open(SYSTEM_CONFIG, 'r', encoding='utf-8') as f:
-        SYSTEM_SET = json.load(f)
-    for upgrade_needed in SYSTEM_SET[1]['legacy-read']:
-        if upgrade_needed == 'config_file':
-            try:
-                config_file()
-                SYSTEM_SET[1]['config_file'].remove(upgrade_needed)
-            except Exception as e:
-                logging.error(f"UPGRADING: ERROR COULD NOT UPGRADE: {str(e)}")
-        if upgrade_needed == 'file_config':
-            try:
-                file_config()
-                SYSTEM_SET[1]['legacy-read'].remove(upgrade_needed)
-            except Exception as e:
-                logging.error(f"UPGRADING: ERROR COULD NOT UPGRADE: {str(e)}")
-    filtered_data = []
-    updated_to = SYSTEM_SET[1]["UPDATE"]
-    for entry in SYSTEM_SET:
-        if 'UPDATE' in entry and entry.get('legacy-read') == []:
-            continue  # Skip this entry
-        filtered_data.append(entry)
-    filtered_data[0]['Version'] = updated_to
-    with open(SYSTEM_CONFIG, 'w', encoding='utf-8') as f:
-        json.dump(filtered_data, f, indent=4)
-
 
 @app.route('/set/theme', methods=['GET', 'POST'])
 def set_theme():
