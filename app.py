@@ -1120,9 +1120,15 @@ def update_now():
         for version_entry in remote_json["versions"]:
             for key, value in version_entry.items():
                 if version_split < version_tuple(key):
-                    add_files.extend(value.get('add', []))
-                    update_files.extend(value.get('merge', []))
-                    clean_files.extend(value.get('remove', []))
+                    for f in value.get('add', []):
+                        if f not in add_files:
+                            add_files.append(f)
+                    for f in value.get('merge', []):
+                        if f not in update_files:
+                            update_files.append(f)
+                    for f in value.get('remove', []):
+                        if f not in clean_files:
+                            clean_files.append(f)
         if "app.py" in add_files:
             app_need_update = True
             while "app.py" in add_files:
