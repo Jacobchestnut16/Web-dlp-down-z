@@ -2,7 +2,8 @@ import os
 import json
 from flask import render_template, Response, stream_with_context, Blueprint
 import requests
-from ..config_loader import config_background
+from ..config_loader import config_background, SYSTEM_FILE
+
 SYSTEM_THEME = config_background()
 
 bp = Blueprint('update', __name__)
@@ -30,7 +31,7 @@ def check_for_updates():
             BASE_URL = "https://raw.githubusercontent.com/Jacobchestnut16/Web-dlp-down-z/refs/heads/pre-release/"
     except Exception as e:
         print(e)
-    with open('system.json', 'r', encoding='utf-8') as f:
+    with open(SYSTEM_FILE, 'r', encoding='utf-8') as f:
         version = json.load(f)['version']
     ulr = BASE_URL+'system.json'
     remote_version = fetch_remote_json(ulr)["version"]
@@ -42,9 +43,7 @@ def check_for_updates():
 
 @bp.route('/update/start')
 def update_now():
-    print("update now")
     def generate():
-        print("staring update")
         def merge_json_files(existing_path, patch_data):
             if not os.path.exists(existing_path):
                 user_config = {}
@@ -64,7 +63,7 @@ def update_now():
         def version_tuple(v):
             return tuple(map(int, v.split('.')))
 
-        with open('system.json', 'r', encoding='utf-8') as f:
+        with open(SYSTEM_FILE, 'r', encoding='utf-8') as f:
             version = json.load(f)['version']
         version_split = version_tuple(version)
         remote_json = fetch_remote_json(BASE_URL + 'system.json')
@@ -165,10 +164,10 @@ def update_now():
                 set(needs_updating['remove']) == set(updated['remove'])
         )
         if all_applied:
-            with open('system.json', 'r', encoding='utf-8') as f:
+            with open(SYSTEM_FILE, 'r', encoding='utf-8') as f:
                 system_features = json.load(f)
             system_features['version'] = remote_json['version']
-            with open('system.json', 'w', encoding='utf-8') as f:
+            with open(SYSTEM_FILE, 'w', encoding='utf-8') as f:
                 json.dump(system_features, f, indent=4)
             if app_need_update:
                 with open('bp.py', 'w', encoding='utf-8') as f:
@@ -191,7 +190,7 @@ def update_now():
 
 @bp.route('/update')
 def update():
-    with open('system.json', 'r', encoding='utf-8') as f:
+    with open(SYSTEM_FILE, 'r', encoding='utf-8') as f:
         current = json.load(f)['version']
     update = check_for_updates()
     if update[0] == "Update required":
