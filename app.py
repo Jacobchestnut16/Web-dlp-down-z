@@ -1019,7 +1019,7 @@ def fetch_remote_json(url):
     return res.json()
 
 def fetch_remote_file(url):
-    res = requests.get(url)
+    res = requests.get(url, timeout=5)
     res.raise_for_status()
     return res.text
 
@@ -1036,8 +1036,14 @@ def check_for_updates():
             BASE_URL = "https://raw.githubusercontent.com/Jacobchestnut16/Web-dlp-down-z/refs/heads/pre-release/"
     except Exception as e:
         print(e)
-    with open('system.json', 'r', encoding='utf-8') as f:
-        version = json.load(f)['version']
+    try:
+        system_json = 'system.json'
+        with open(system_json, 'r', encoding='utf-8') as f:
+            version = json.load(f)['version']
+    except Exception as e:
+        system_json = 'app/instance/system.json'
+        with open(system_json, 'r', encoding='utf-8') as f:
+            version = json.load(f)['version']
     ulr = BASE_URL+'system.json'
     remote_version = fetch_remote_json(ulr)["version"]
     if version != remote_version:
@@ -1070,8 +1076,14 @@ def update_now():
         def version_tuple(v):
             return tuple(map(int, v.split('.')))
 
-        with open('system.json', 'r', encoding='utf-8') as f:
-            version = json.load(f)['version']
+        try:
+            system_json = 'system.json'
+            with open(system_json, 'r', encoding='utf-8') as f:
+                version = json.load(f)['version']
+        except Exception as e:
+            system_json = 'app/instance/system.json'
+            with open(system_json, 'r', encoding='utf-8') as f:
+                version = json.load(f)['version']
         version_split = version_tuple(version)
         remote_json = fetch_remote_json(BASE_URL + 'system.json')
         add_files = []
@@ -1114,33 +1126,35 @@ def update_now():
         with open('system_update.json', 'w', encoding='utf-8') as f:
             json.dump({"needs_updating": needs_updating, "updated": updated}, f, indent=4)
         print(updated)
+
         for f in add_files:
-            if f not in updated:
-                yield f"data: Adding {f}\n\n"
+            if f not in updated['add']:
+                time.sleep(1)
                 try:
                     dir_path = os.path.dirname(f)
                     if dir_path:
                         os.makedirs(dir_path, exist_ok=True)
+
+                    content = fetch_remote_file(BASE_URL + f)
+
                     try:
                         with open(f, 'x', encoding='utf-8') as file:
-                            file.write(fetch_remote_file(BASE_URL + f))
+                            file.write(content)
                     except FileExistsError:
-                        try:
-                            with open(f, 'w', encoding='utf-8') as file:
-                                file.write(fetch_remote_file(BASE_URL + f))
-                        except Exception as e:
-                            yield f"data: {e}\n\n"
-                            continue
-                    except Exception as e:
-                        yield f"data: {e}\n\n"
-                        continue
+                        with open(f, 'w', encoding='utf-8') as file:
+                            file.write(content)
+
                     updated['add'].append(f)
-                    with open('system_update.json', 'w', encoding='utf-8') as f:
-                        json.dump({"needs_updating": needs_updating, "updated": updated}, f, indent=4)
+                    with open('system_update.json', 'w', encoding='utf-8') as state:
+                        json.dump({"needs_updating": needs_updating, "updated": updated}, state, indent=4)
+
+                    yield f"data: Added {f}\n\n"
+
                 except Exception as e:
-                    yield f"Error: adding {f}, {e}\n\n"
+                    yield f"data: ❌ Error adding {f}: {str(e)}\n\n"
+                    logging.exception(f"Error while adding file: {f}")
         for f in update_files:
-            if f not in updated:
+            if f not in updated['merge']:
                 yield f"data: Updating {f}\n\n"
                 try:
                     try:
@@ -1153,7 +1167,7 @@ def update_now():
                 except Exception as e:
                     yield f"Error: updating {f}, {e}\n\n"
         for f in clean_files:
-            if f not in updated:
+            if f not in updated['remove']:
                 yield f"data: Removing {f}"
                 try:
                     try:
@@ -1171,11 +1185,20 @@ def update_now():
                 set(needs_updating['remove']) == set(updated['remove'])
         )
         if all_applied:
-            with open('system.json', 'r', encoding='utf-8') as f:
-                system_features = json.load(f)
-            system_features['version'] = remote_json['version']
-            with open('system.json', 'w', encoding='utf-8') as f:
-                json.dump(system_features, f, indent=4)
+            system_json = 'system.json'
+            try:
+                with open(system_json, 'r', encoding='utf-8') as f:
+                    system_features = json.load(f)
+                system_features['version'] = remote_json['version']
+                with open(system_json, 'w', encoding='utf-8') as f:
+                    json.dump(system_features, f, indent=4)
+            except Exception as e:
+                system_json = 'app/instance/system.json'
+                with open(system_json, 'r', encoding='utf-8') as f:
+                    system_features = json.load(f)
+                system_features['version'] = remote_json['version']
+                with open(system_json, 'w', encoding='utf-8') as f:
+                    json.dump(system_features, f, indent=4)
             if app_need_update:
                 with open('app.py', 'w', encoding='utf-8') as f:
                     f.write(fetch_remote_file(BASE_URL + 'app.py'))
@@ -1197,8 +1220,16 @@ def update_now():
 
 @app.route('/update')
 def update():
-    with open('system.json', 'r', encoding='utf-8') as f:
-        current = json.load(f)['version']
+    try:
+        system_json = 'system.json'
+        with open(system_json, 'r', encoding='utf-8') as f:
+            current = json.load(f)['version']
+    except Exception as e:
+        system_json = 'app/instance/system.json'
+        with open(system_json, 'r', encoding='utf-8') as f:
+            current = json.load(f)['version']
+
+
     update = check_for_updates()
     if update[0] == "Update required":
         return render_template('update.html', updateTxt=update[0], updateVersion=update[1], current=current,
@@ -1233,4 +1264,4 @@ if __name__ == '__main__':
                 file.write('')
         except FileExistsError:
             pass
-    app.run(debug=True, host='0.0.0.0', port=8080)
+    app.run(debug=True, host='0.0.0.0', port=8080, use_reloader=False)
