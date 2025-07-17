@@ -77,7 +77,7 @@
         },
         {
             "2.0.0.1": {
-                "clean":[
+                "remove":[
                     "default-config.json",
                     "default-download.json",
                     "default-playlist.json",
@@ -86,7 +86,7 @@
                     "system.json",
                     "logs",
                     "playlist_processed.txt",
-                    "processed.txt",
+                    "process.txt",
                     "static/css/code.css",
                     "static/css/code_dark.css",
                     "static/css/evergreen.css",
@@ -112,7 +112,7 @@
                     "app/instance/system.json",
                     "app/logs/logs",
                     "app/logs/playlist_processed.txt",
-                    "app/logs/processed.txt",
+                    "app/logs/process.txt",
                     "app/routes/__init__.py",
                     "app/routes/config.py",
                     "app/routes/edit.py",
