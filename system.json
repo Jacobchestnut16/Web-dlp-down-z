@@ -1,5 +1,5 @@
 {
-    "version": "1.3.6.3",
+    "version": "2.0.0.1",
     "versions": [
         {
             "1.3.2": {
@@ -62,7 +62,7 @@
             }
         },
         {
-            "1.3.6.3": {
+            "1.3.6": {
                 "add": [
                     "app.py",
                     "templates/install.html",
@@ -72,6 +72,67 @@
                     "static/css/code_dark.css",
                     "static/css/evergreen.css",
                     "static/css/evergreen_dark.css"
+                ]
+            }
+        },
+        {
+            "2.0.0.1": {
+                "clean":[
+                    "default-config.json",
+                    "default-download.json",
+                    "default-playlist.json",
+                    "config.json",
+                    "file_config.json",
+                    "system.json",
+                    "logs",
+                    "playlist_processed.txt",
+                    "processed.txt",
+                    "static/css/code.css",
+                    "static/css/code_dark.css",
+                    "static/css/evergreen.css",
+                    "static/css/evergreen_dark.css",
+                    "static/css/style.css",
+                    "templates/config.html",
+                    "templates/createfile.html",
+                    "templates/execute.html",
+                    "templates/file.html",
+                    "templates/index.html",
+                    "templates/install.html",
+                    "templates/thumb.html",
+                    "templates/update.html",
+                    "templates/view.html"
+                ],
+                "add":[
+                    "app.py",
+                    "app/data/default-config.json",
+                    "app/data/default-download.json",
+                    "app/data/default-playlist.json",
+                    "app/instance/config.json",
+                    "app/instance/file_config.json",
+                    "app/instance/system.json",
+                    "app/logs/logs",
+                    "app/logs/playlist_processed.txt",
+                    "app/logs/processed.txt",
+                    "app/routes/__init__.py",
+                    "app/routes/config.py",
+                    "app/routes/edit.py",
+                    "app/routes/execute.py",
+                    "app/routes/update.py",
+                    "app/routes/views.py",
+                    "app/static/css/code.css",
+                    "app/static/css/code_dark.css",
+                    "app/static/css/evergreen.css",
+                    "app/static/css/evergreen_dark.css",
+                    "app/static/css/style.css",
+                    "app/templates/config.html",
+                    "app/templates/createfile.html",
+                    "app/templates/execute.html",
+                    "app/templates/file.html",
+                    "app/templates/index.html",
+                    "app/templates/install.html",
+                    "app/templates/thumb.html",
+                    "app/templates/update.html",
+                    "app/templates/view.html"
                 ]
             }
         }
