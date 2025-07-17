@@ -9,7 +9,8 @@ import datetime
 from urllib.parse import urlparse
 from flask import render_template, Response, stream_with_context, Blueprint
 from yt_dlp import YoutubeDL
-from app.config_loader import (FILE_CONFIG, DOWNLOAD_DIR, PLAYLIST_PROCESS_FILE, DOWNLOAD_FILE, HIERARCHY_DIR, CONFIG_FILE, PROCESS_FILE)
+from app.config_loader import (FILE_CONFIG, DOWNLOAD_DIR, PLAYLIST_PROCESS_FILE, DOWNLOAD_FILE, HIERARCHY_DIR,
+                               CONFIG_FILE, PROCESS_FILE, SYSTEM_FILE)
 active_downloads = {}  # {file_name: threading.Thread}
 stop_flags = {}        # {file_name: threading.Event}
 from ..config_loader import config_background
@@ -563,14 +564,14 @@ def config():
     for key, value in config.items():
         print(key, value)
         entries.append({'filename': key, 'website': value})
-    with open('system.json', 'r') as f:
+    with open(SYSTEM_FILE, 'r') as f:
         system = json.load(f)
     try:
         system_theme = system['theme']
     except Exception as e:
         system_theme = 'default'
         system['theme'] = 'default'
-        with open('system.json', 'w', encoding='utf-8') as f:
+        with open(SYSTEM_FILE, 'w', encoding='utf-8') as f:
             json.dump(system, f, ensure_ascii=False, indent=4)
 
     return render_template('config.html', entries=entries, where='config', system_theme=system_theme)

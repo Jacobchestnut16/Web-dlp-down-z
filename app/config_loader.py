@@ -19,6 +19,7 @@ DOWNLOAD_FILE = os.path.join(DATA_DIR, 'default-download.json')
 DEFAULT_CONFIG_FILE = os.path.join(DATA_DIR, 'default-config.json')
 PROCESS_FILE = os.path.join(LOG_DIR, 'process.txt')
 PLAYLIST_PROCESS_FILE = os.path.join(LOG_DIR, 'playlist_processed.txt')
+SYSTEM_FILE = os.path.join(SYSTEM_DIR, 'system.json')
 
 
 def configBackground():
