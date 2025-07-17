@@ -104,6 +104,8 @@
                 ],
                 "add":[
                     "app.py",
+                    "app/__init__.py",
+                    "app/config_loader.py",
                     "app/data/default-config.json",
                     "app/data/default-download.json",
                     "app/data/default-playlist.json",
