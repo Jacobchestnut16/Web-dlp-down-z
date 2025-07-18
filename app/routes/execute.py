@@ -556,6 +556,7 @@ def stop_download(file):
         stop_flags[file].set()  # Signal the thread to stop
         return "Stopping download...", 200
     return "No download in progress for this file.", 404
+
 @bp.route('/config')
 def config():
     entries = []
