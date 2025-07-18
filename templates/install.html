@@ -62,6 +62,7 @@
 </div>
 <pre id="log"></pre>
 <div class="fixed-bottom-bar"><button id="stop-button" style="display: none;">🛑 Stop Download</button></div>
+<div class="buffer"></div>
 <script>
     function startPlaylist() {
         const logElement = document.getElementById("log");
@@ -122,10 +123,12 @@ let eventSource = null;
                 const percentMatch = msg.match(/Downloading:\s*([\d.]+)%/);
                 const etaMatch = msg.match(/ETA\s+(\S+)/);
                 const titleMatch = msg.match(/-\s+(.*?)\s+\[\d+\/\d+\]/);
+                const reachMatch = msg.match(/(.*)/);
 
                 const percent = percentMatch ? parseFloat(percentMatch[1]) : 0;
                 const eta = etaMatch ? etaMatch[1] : "unknown";
                 const title = titleMatch ? titleMatch[1] : "Unknown Title";
+                const reach = reachMatch ? reachMatch[1] : "";
                 console.log("the title: " +title)
 
                 if (title !== "Unknown Title") {

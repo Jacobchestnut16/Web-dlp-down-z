@@ -56,3 +56,7 @@ div.new a {
 .sortable-ghost {
     background: #3b3b3b !important;
 }
+.accent {
+    color: #ff5370;
+    border: #ff5370 1px solid;
+}
