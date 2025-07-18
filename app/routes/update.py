@@ -1,5 +1,8 @@
+import logging
 import os
 import json
+import time
+
 from flask import render_template, Response, stream_with_context, Blueprint
 import requests
 from ..config_loader import config_background, SYSTEM_FILE
@@ -40,10 +43,11 @@ def check_for_updates():
     else:
         return ("Up to date", version)
 
-
-@bp.route('/update/start')
+@app.route('/update/start')
 def update_now():
+
     def generate():
+
         def merge_json_files(existing_path, patch_data):
             if not os.path.exists(existing_path):
                 user_config = {}
@@ -82,10 +86,10 @@ def update_now():
                     for f in value.get('remove', []):
                         if f not in clean_files:
                             clean_files.append(f)
-        if "bp.py" in add_files:
+        if "app.py" in add_files:
             app_need_update = True
-            while "bp.py" in add_files:
-                add_files.remove("bp.py")
+            while "app.py" in add_files:
+                add_files.remove("app.py")
         else:
             app_need_update = False
 
@@ -106,34 +110,34 @@ def update_now():
             updated = {"add": [], "merge": [], "remove": [], "app_need_update": app_need_update}
         with open('system_update.json', 'w', encoding='utf-8') as f:
             json.dump({"needs_updating": needs_updating, "updated": updated}, f, indent=4)
-        print(updated)
         for f in add_files:
-            if f not in updated:
-                yield f"data: Adding {f}\n\n"
+            if f not in updated['add']:
+                time.sleep(1)
                 try:
                     dir_path = os.path.dirname(f)
                     if dir_path:
                         os.makedirs(dir_path, exist_ok=True)
+
+                    content = fetch_remote_file(BASE_URL + f)
+
                     try:
                         with open(f, 'x', encoding='utf-8') as file:
-                            file.write(fetch_remote_file(BASE_URL + f))
+                            file.write(content)
                     except FileExistsError:
-                        try:
-                            with open(f, 'w', encoding='utf-8') as file:
-                                file.write(fetch_remote_file(BASE_URL + f))
-                        except Exception as e:
-                            yield f"data: {e}\n\n"
-                            continue
-                    except Exception as e:
-                        yield f"data: {e}\n\n"
-                        continue
+                        with open(f, 'w', encoding='utf-8') as file:
+                            file.write(content)
+
                     updated['add'].append(f)
-                    with open('system_update.json', 'w', encoding='utf-8') as f:
-                        json.dump({"needs_updating": needs_updating, "updated": updated}, f, indent=4)
+                    with open('system_update.json', 'w', encoding='utf-8') as state:
+                        json.dump({"needs_updating": needs_updating, "updated": updated}, state, indent=4)
+
+                    yield f"data: Added {f}\n\n"
+
                 except Exception as e:
-                    yield f"Error: adding {f}, {e}\n\n"
+                    yield f"data: ❌ Error adding {f}: {str(e)}\n\n"
+                    logging.exception(f"Error while adding file: {f}")
         for f in update_files:
-            if f not in updated:
+            if f not in updated['merge']:
                 yield f"data: Updating {f}\n\n"
                 try:
                     try:
@@ -146,7 +150,7 @@ def update_now():
                 except Exception as e:
                     yield f"Error: updating {f}, {e}\n\n"
         for f in clean_files:
-            if f not in updated:
+            if f not in updated['remove']:
                 yield f"data: Removing {f}"
                 try:
                     try:
