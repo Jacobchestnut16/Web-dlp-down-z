@@ -43,7 +43,7 @@ def check_for_updates():
     else:
         return ("Up to date", version)
 
-@app.route('/update/start')
+@bp.route('/update/start')
 def update_now():
 
     def generate():
