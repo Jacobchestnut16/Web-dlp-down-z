@@ -1,0 +1,67 @@
+body {
+    background-color: #fdf6f0; /* Warm light beige */
+    color: #3e2f1c; /* Deep warm brown-gray */
+    font-family: 'Fira Code', 'Courier New', monospace;
+}
+
+a,
+nav a,
+div.nav-item a,
+button {
+    background-color: #f3e0d0; /* Warm light peach */
+    color: #8b4513; /* Saddle brown */
+    transition: background-color 0.3s ease, transform 0.2s;
+}
+
+a:hover,
+nav a:hover,
+div.nav-item a:hover,
+button:hover {
+    background-color: #e8c4a6; /* Warm terracotta tone */
+    transform: translateY(-2px);
+}
+
+div.container {
+    background: #fffaf6; /* Off-white with warmth */
+    border-radius: 6px;
+    border: 1px solid #e3d2c3;
+}
+
+div.title {
+    background: #f3e0d0; /* Same as buttons for consistency */
+    color: #c25b1d; /* Rich warm orange-brown */
+    font-weight: bold;
+}
+
+input[type="text"],
+select {
+    background-color: #fef9f6; /* Very light warm background */
+    border: 1px solid #dec6b0;
+    color: #3e2f1c;
+    font-family: inherit;
+}
+
+input[type="text"]:focus,
+select:focus {
+    border-color: #c25b1d;
+    outline: none;
+}
+
+.fixed-bottom-bar {
+    background-color: #fffaf6;
+    border-top: 1px solid #dec6b0;
+}
+
+div.new a {
+    background-color: #ffb347; /* Warm orange highlight remains */
+    color: #3e2f1c;
+}
+
+.sortable-ghost {
+    background: #fbeee4 !important; /* Warm ghosting effect */
+}
+
+.accent {
+    color: #e85a4f; /* Warm coral red */
+    border: #e85a4f 1px solid;
+}

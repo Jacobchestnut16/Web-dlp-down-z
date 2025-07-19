@@ -128,10 +128,27 @@ The `view` section can be found in the settings tab with the top menu
 
 ---
 
-## Whats New v1.3.6:
-- New update function, applies updates with less errors and preserves more settings
-- Ability to remove groups
-- Fix for the default download and default playlist they now install and execute correctly
+# Upgrade compatibility:
+- v1.3.6 → direct
+- v1.3.5 → partial / manual change required
+- < v1.3.5 → legacy / needs multiple configurations and changes to update. best option is to download the newest version and follow the below instructions.
+
+follow the directions in the `Backup recovery` issue to complete all changes.
+this is a major structure update and this update may not have all of the tools to move files where they need to go.
+
+---
+
+## Whats New v2.0.0:
+
+- System-wide restructure. This is for updates alone, instead of changes to app.py changes now appear in places like `routes` which is the source of all app functions:
+  - all files in `static` and `templates` should now be found inside of the app folder
+  - config files are now located in `instance` folder
+  - log files are in the `logs` folder
+  - the `data` folder houses all the lists .json files
+- New features:
+  - Styles:
+    - Now indexes the `static/css` folder so that drag and drop can work
+    - 
 ---
 
 ## 📌 Requirements

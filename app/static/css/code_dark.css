@@ -21,6 +21,16 @@ button:hover {
     transform: translateY(-2px);
 }
 
+nav a,
+.bar{
+    background-color: #29414f;
+}
+nav a:hover,
+.bar:hover{
+    background-color: #c39029;
+    color: #2c021f;
+}
+
 div.container {
     background: #12171d; /* Slightly lighter than body */
     border-radius: 6px;

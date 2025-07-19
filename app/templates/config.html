@@ -39,12 +39,11 @@
     <h1>Theme</h1>
     <form action="/set/theme" method="post">
         <select name="theme" id="">
-            <option value="{{ system_theme }}">{{ system_theme.split('.')[0].capitalize() }}</option>
+            <option value="{{ system_theme }}">{{ system_theme.split('.')[0].replace('_',' ').replace('-',' ').capitalize() }}</option>
             <option value="default">Default</option>
-            <option value="evergreen.css">Evergreen</option>
-            <option value="evergreen_dark.css">Evergreen dark</option>
-            <option value="code.css">Code</option>
-            <option value="code_dark.css">Code dark</option>
+            {% for style in styles %}
+            <option value="{{style}}">{{ ((style.split('.')[0]).replace('_',' ').replace('-',' ')).capitalize() }}</option>
+            {% endfor %}
         </select>
         <button type="submit">Set Theme</button>
     </form>
