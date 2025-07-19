@@ -134,7 +134,7 @@ def execute_playlist_file(file):
         yield "data: Starting playlist separation...\n\n"
 
         try:
-            with open(file, 'r', encoding='utf-8') as f:
+            with open(os.path.join(DATA_DIR,file), 'r', encoding='utf-8') as f:
                 playlist_json = json.load(f)
 
             # Step 2: Process each line one by one
@@ -272,7 +272,7 @@ def execute_download_file(file):
         yield "data: Starting Downloading process...\n\n"
         logging.info("data: Downloading started")
         try:
-            with open(download_file, 'r', encoding='utf-8') as f:
+            with open(os.path.join(DATA_DIR, download_file), 'r', encoding='utf-8') as f:
                 download_json = json.load(f)
 
             total = len(download_json)
