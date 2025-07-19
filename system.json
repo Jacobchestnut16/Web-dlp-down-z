@@ -68,6 +68,7 @@
                     "templates/install.html",
                     "templates/thumb.html",
                     "templates/file.html",
+                    "templates/update.html",
                     "static/css/code.css",
                     "static/css/code_dark.css",
                     "static/css/evergreen.css",
