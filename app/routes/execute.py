@@ -39,6 +39,7 @@ def execute_installation(file):
 
 @bp.route('/execute/thumbnail/<file>')
 def execute_thumbnail(file):
+    print('downloading',file)
     logging.basicConfig(level=logging.DEBUG)
     ansi_escape = re.compile(r'\x1b\[[0-9;]*m')
     def generate(master_file):
@@ -46,7 +47,7 @@ def execute_thumbnail(file):
 
         yield "data: Scraping metadata...\n\n"
         try:
-            with open(master_file, 'r', encoding='utf-8') as f:
+            with open(os.path.join(DATA_DIR, master_file), 'r', encoding='utf-8') as f:
                 download_json = json.load(f)
 
             total = len(download_json)
@@ -81,7 +82,7 @@ def execute_thumbnail(file):
                             description = ''
                             thumbnail = ''
 
-                    with open(master_file, 'r', encoding='utf-8') as f:
+                    with open(os.path.join(DATA_DIR, master_file), 'r', encoding='utf-8') as f:
                         json_data = json.load(f)
 
                     updated = False
@@ -93,7 +94,7 @@ def execute_thumbnail(file):
                             updated = True
 
                     if updated:
-                        with open(master_file, 'w', encoding='utf-8') as f:
+                        with open(os.path.join(DATA_DIR, master_file), 'w', encoding='utf-8') as f:
                             json.dump(json_data, f, indent=4)
                     else:
                         yield f"data: Error: File {name} Failed to update metadata.\n\n"
@@ -102,7 +103,7 @@ def execute_thumbnail(file):
 
         yield f"data: REDIRECT /edit/{master_file}\n\n"
 
-    return Response(stream_with_context(generate(os.path.join(DATA_DIR, file))), content_type='text/event-stream')
+    return Response(stream_with_context(generate(file)), content_type='text/event-stream')
 
 @bp.route('/execute/playlist/<file>')
 def execute_playlist_file(file):

@@ -205,6 +205,7 @@ def group_action():
 
     if request.method == 'POST':
         o_file = request.form.get('file')
+        print('file', o_file)
         file = os.path.join(DATA_DIR, o_file)
         action = request.form.get('action')
         filenames = request.form.getlist('filename')
