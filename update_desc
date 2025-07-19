@@ -6,6 +6,6 @@
 - New features:
   - Styles:
     - Now indexes the `static/css` folder so that drag and drop can work
-
-Before updating change app.py the last line to look like this:
+<br>
+Before updating change app.py the last line to look like this:<br>
 app.run(debug=True, host='0.0.0.0', port=8080, use_reloader=False)
