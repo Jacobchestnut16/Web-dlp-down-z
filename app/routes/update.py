@@ -198,7 +198,8 @@ def update():
     update = check_for_updates()
     if update[0] == "Update required":
         return render_template('update.html', updateTxt=update[0], updateVersion=update[1], current=current,
-                               system_theme=config_background())
+                               system_theme=config_background(), update_desc=fetch_remote_file(BASE_URL+'update_dec'))
     else:
-        return render_template('update.html', updateTxt=update[0], current=current, system_theme=config_background())
+        return render_template('update.html', updateTxt=update[0], current=current,
+                               system_theme=config_background(), update_desc=fetch_remote_file(BASE_URL+'update_dec'))
 
