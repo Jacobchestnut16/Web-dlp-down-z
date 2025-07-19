@@ -10,7 +10,7 @@ from urllib.parse import urlparse
 from flask import render_template, Response, stream_with_context, Blueprint
 from yt_dlp import YoutubeDL
 from app.config_loader import (FILE_CONFIG, DOWNLOAD_DIR, PLAYLIST_PROCESS_FILE, DOWNLOAD_FILE, HIERARCHY_DIR,
-                               CONFIG_FILE, PROCESS_FILE, SYSTEM_FILE, STYLE_DIR, DATA_DIR)
+                               CONFIG_FILE, PROCESS_FILE, SYSTEM_FILE, STYLE_DIR, DATA_DIR, LOG_DIR)
 active_downloads = {}  # {file_name: threading.Thread}
 stop_flags = {}        # {file_name: threading.Event}
 from ..config_loader import config_background
@@ -215,12 +215,13 @@ def execute_playlist_file(file):
                 yield f"data: ▶️ Reached Playlist end: {url}\n\n"
                 logging.info(f'Reached Playlist end: {url}')
 
-                with open(PLAYLIST_PROCESS_FILE, 'a', encoding='utf-8') as out:
-                    log_time = datetime.datetime.now()
-                    log_time = log_time.strftime('%Y-%m-%d %H:%M')
-                    out.write(f'{log_time} {name} {url}\n')
+                with open(os.path.join(LOG_DIR, PLAYLIST_PROCESS_FILE), 'a', encoding='utf-8') as out:
+                    time = datetime.datetime.now()
+                    time = time.strftime('%Y-%m-%d %H:%M')
+                    out.write(f'{time} {name} {url}\n')
 
-                with open(file, 'w', encoding='utf-8') as f:
+                # Remove the finished URL from the list
+                with open(os.path.join(DATA_DIR, file), 'w', encoding='utf-8') as f:
                     json.dump(playlist_json, f, indent=4)
 
 
@@ -360,6 +361,13 @@ def execute_download_file(file):
                     })
 
                 try:
+                    with open(os.path.join(DATA_DIR, 'cookies.txt'), 'r', encoding='utf-8') as f:
+                        cookies = f.read().strip().replace('\n', '')
+                    ydl_opts['http_headers'] = {'Cookie': cookies}
+                except Exception as e:
+                    logging.info(f"cookies file not found, skipping: {e}")
+
+                try:
                     def download_and_drain():
                         messages.put(f"data: ▶️ Downloading ({current_index}/{total}): {name}, {url}\n\n")
                         try:
@@ -412,13 +420,13 @@ def execute_download_file(file):
                             break
                         yield msg
 
-                    with open(PROCESS_FILE, 'a', encoding='utf-8') as out:
+                    with open(os.path.join(LOG_DIR, PROCESS_FILE), 'a', encoding='utf-8') as out:
                         time = datetime.datetime.now()
                         time = time.strftime('%Y-%m-%d %H:%M')
                         out.write(f"{time} {name} {url} {STATUS}\n")
 
                     # Remove the finished URL from the list
-                    with open(download_file, 'w', encoding='utf-8') as f:
+                    with open(os.path.join(DATA_DIR, download_file), 'w', encoding='utf-8') as f:
                         json.dump(download_json, f, indent=4)
 
                 except Exception as ve:
@@ -531,14 +539,14 @@ def execute_download_file(file):
                                 break
                             yield msg
 
-                        with open(PROCESS_FILE, 'a', encoding='utf-8') as out:
+                        with open(os.path.join(LOG_DIR, PROCESS_FILE), 'a', encoding='utf-8') as out:
                             time = datetime.datetime.now()
                             time = time.strftime('%Y-%m-%d %H:%M')
                             out.write(f"{time} {name} {url} {STATUS}\n")
 
                         # Remove the finished URL from the list
-                        with open(download_file, 'w', encoding='utf-8') as f:
-                            json.dump(retry, f, indent=4)
+                        with open(os.path.join(DATA_DIR, download_file), 'w', encoding='utf-8') as f:
+                            json.dump(download_json, f, indent=4)
 
                     except Exception as ve:
                         yield f"data: ❌ Error processing {name},{url}: {str(ve).splitlines()[0]}\n\n"

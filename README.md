@@ -148,7 +148,9 @@ this is a major structure update and this update may not have all of the tools t
 - New features:
   - Styles:
     - Now indexes the `static/css` folder so that drag and drop can work
-    - 
+  - Cookies:
+    - You can now download Private and payed content that you can access from your account
+    - go to the website login find you cookies using the inspect tool, follow your browsers directions to find the cookies tap, copy things like `sessionid` `auth_token` `access_token`, copy this to web-dlp-down-z/app/data/cookies.txt
 ---
 
 ## 📌 Requirements
