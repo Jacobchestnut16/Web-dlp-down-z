@@ -10,7 +10,7 @@ from urllib.parse import urlparse
 from flask import render_template, Response, stream_with_context, Blueprint
 from yt_dlp import YoutubeDL
 from app.config_loader import (FILE_CONFIG, DOWNLOAD_DIR, PLAYLIST_PROCESS_FILE, DOWNLOAD_FILE, HIERARCHY_DIR,
-                               CONFIG_FILE, PROCESS_FILE, SYSTEM_FILE, STYLE_DIR)
+                               CONFIG_FILE, PROCESS_FILE, SYSTEM_FILE, STYLE_DIR, DATA_DIR)
 active_downloads = {}  # {file_name: threading.Thread}
 stop_flags = {}        # {file_name: threading.Event}
 from ..config_loader import config_background
@@ -102,7 +102,7 @@ def execute_thumbnail(file):
 
         yield f"data: REDIRECT /edit/{master_file}\n\n"
 
-    return Response(stream_with_context(generate(file)), content_type='text/event-stream')
+    return Response(stream_with_context(generate(os.path.join(DATA_DIR, file))), content_type='text/event-stream')
 
 @bp.route('/execute/playlist/<file>')
 def execute_playlist_file(file):
@@ -115,7 +115,7 @@ def execute_playlist_file(file):
     if file_type != 'default':
         for filef in files:
             if filef['file'] == file_name:
-                download_to = filef['install-playlist']
+                download_to = os.path.join(DATA_DIR, filef['install-playlist'])
     else:
         download_to = DOWNLOAD_FILE
 

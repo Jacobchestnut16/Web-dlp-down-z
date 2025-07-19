@@ -204,7 +204,7 @@ def group_action():
             print("ERROR:", e)
 
     if request.method == 'POST':
-        file = request.form.get('file')
+        o_file = request.form.get('file')
         file = os.path.join(DATA_DIR, file)
         action = request.form.get('action')
         filenames = request.form.getlist('filename')
@@ -213,7 +213,7 @@ def group_action():
         duration = request.form.getlist('duration')
         downloadAs = request.form.getlist('downloadAs')
         thumb = request.form.getlist('thumb')
-        type = file.split('-')[1].split('.')[0]
+        type = o_file.split('-')[1].split('.')[0]
 
         if type == 'playlist':
             save_playlist(file, websites, filenames)
@@ -221,14 +221,14 @@ def group_action():
             save(file, websites, filenames, description, duration, downloadAs, thumb)
 
         if action == 'execute':
-            return redirect(url_for('execute.execute_installation', file=file))
+            return redirect(url_for('execute.execute_installation', file=o_file))
         elif action == 'remove':
-            return redirect(url_for('edit.remove_group', group=file.split('-')[0]))
+            return redirect(url_for('edit.remove_group', group=o_file.split('-')[0]))
         else:
             if type == 'download':
-                return redirect(url_for('execute.run_thumbnail_generator', file=file))
+                return redirect(url_for('execute.run_thumbnail_generator', file=o_file))
             else:
-                return redirect(url_for('edit.edit', file=file))
+                return redirect(url_for('edit.edit', file=o_file))
 
 
 @bp.route('/group/remove/<group>')
