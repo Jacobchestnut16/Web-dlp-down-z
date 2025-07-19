@@ -1,5 +1,5 @@
 {
-    "version": "2.0.0",
+    "version": "2.0.1.1",
     "versions": [
         {
             "1.3.2": {
@@ -136,6 +136,21 @@
                     "app/templates/thumb.html",
                     "app/templates/update.html",
                     "app/templates/view.html"
+                ]
+            }
+        },
+        {
+            "2.0.1.1" : {
+                "add": [
+                    "app/routes/edit.py",
+                    "app/routes/execute.py",
+                    "app/routes/update.py",
+                    "app/routes/execute.py",
+                    "app/templates/config.html",
+                    "app/templates/execute.html",
+                    "app/templates/file.html",
+                    "app/templates/update.html",
+                    "app/config_loader.py"
                 ]
             }
         }
