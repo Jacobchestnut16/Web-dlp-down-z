@@ -45,7 +45,7 @@ def check_for_updates():
 @bp.route('/update/start')
 def update_now():
     def generate():
-        PROJECT_SOURCE = os.path.abspath(os.path.dirname(__file__), "../../")
+        PROJECT_SOURCE = os.path.abspath(os.path.dirname(__file__, "../../../"))
         def merge_json_files(existing_path, patch_data):
             if not os.path.exists(existing_path):
                 user_config = {}
