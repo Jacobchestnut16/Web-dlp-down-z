@@ -39,10 +39,12 @@
 <h2>Current Version: {{current}}</h2>
 <p>{{updateTxt}} {% if updateVersion %}{{updateVersion}}{% endif %}</p>
 {% if updateVersion %}<button onclick="start()">Update now</button>{% endif %}
+<div id="update_desc">{{update_desc}}</div>
 <pre id="log"></pre>
 
 <script>
     function start() {
+        document.getElementById('update_desc').className = 'hide';
         const logElement = document.getElementById("log");
         const eventSource = new EventSource("/update/start");
         eventSource.onmessage = function (event) {
@@ -57,5 +59,11 @@
     }
 
 </script>
+
+<style>
+    .hide{
+        display: none;
+    }
+</style>
 </body>
 </html>
