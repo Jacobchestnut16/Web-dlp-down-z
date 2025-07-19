@@ -7,7 +7,6 @@ from flask import render_template, Response, stream_with_context, Blueprint
 import requests
 from ..config_loader import config_background, SYSTEM_FILE
 
-SYSTEM_THEME = config_background()
 
 bp = Blueprint('update', __name__)
 
@@ -45,9 +44,8 @@ def check_for_updates():
 
 @bp.route('/update/start')
 def update_now():
-
     def generate():
-
+        PROJECT_SOURCE = os.path.abspath(os.path.dirname(__file__), "../../")
         def merge_json_files(existing_path, patch_data):
             if not os.path.exists(existing_path):
                 user_config = {}
@@ -115,16 +113,17 @@ def update_now():
                 time.sleep(1)
                 try:
                     dir_path = os.path.dirname(f)
+                    dir_path = os.path.join(PROJECT_SOURCE, dir_path)
                     if dir_path:
                         os.makedirs(dir_path, exist_ok=True)
 
                     content = fetch_remote_file(BASE_URL + f)
 
                     try:
-                        with open(f, 'x', encoding='utf-8') as file:
+                        with open(os.path.join(PROJECT_SOURCE, f), 'x', encoding='utf-8') as file:
                             file.write(content)
                     except FileExistsError:
-                        with open(f, 'w', encoding='utf-8') as file:
+                        with open(os.path.join(PROJECT_SOURCE, f), 'w', encoding='utf-8') as file:
                             file.write(content)
 
                     updated['add'].append(f)
@@ -141,7 +140,7 @@ def update_now():
                 yield f"data: Updating {f}\n\n"
                 try:
                     try:
-                        merge_json_files(f, fetch_remote_json(BASE_URL + f))
+                        merge_json_files(os.path.join(PROJECT_SOURCE, f), fetch_remote_json(BASE_URL + f))
                     except Exception as e:
                         yield f"data: {e}\n\n"
                     updated['merge'].append(f)
@@ -154,7 +153,7 @@ def update_now():
                 yield f"data: Removing {f}"
                 try:
                     try:
-                        os.remove(f)
+                        os.remove(os.path.join(PROJECT_SOURCE, f))
                     except FileNotFoundError:
                         yield f"data: File {f} not found, skipping remove\n\n"
                     updated['remove'].append(f)
@@ -174,8 +173,8 @@ def update_now():
             with open(SYSTEM_FILE, 'w', encoding='utf-8') as f:
                 json.dump(system_features, f, indent=4)
             if app_need_update:
-                with open('bp.py', 'w', encoding='utf-8') as f:
-                    f.write(fetch_remote_file(BASE_URL + 'bp.py'))
+                with open(os.path.join(PROJECT_SOURCE, 'app.py'), 'w', encoding='utf-8') as f:
+                    f.write(fetch_remote_file(BASE_URL + 'app.py'))
                 yield f"data: Update complete, APP NEEDS RESTARTED.\n\n"
             else:
                 yield f"data: Update complete.\n\n"
@@ -199,7 +198,7 @@ def update():
     update = check_for_updates()
     if update[0] == "Update required":
         return render_template('update.html', updateTxt=update[0], updateVersion=update[1], current=current,
-                               system_theme=SYSTEM_THEME)
+                               system_theme=config_background())
     else:
-        return render_template('update.html', updateTxt=update[0], current=current, system_theme=SYSTEM_THEME)
+        return render_template('update.html', updateTxt=update[0], current=current, system_theme=config_background())
 

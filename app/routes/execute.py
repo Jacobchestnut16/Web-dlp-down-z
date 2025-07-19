@@ -10,17 +10,17 @@ from urllib.parse import urlparse
 from flask import render_template, Response, stream_with_context, Blueprint
 from yt_dlp import YoutubeDL
 from app.config_loader import (FILE_CONFIG, DOWNLOAD_DIR, PLAYLIST_PROCESS_FILE, DOWNLOAD_FILE, HIERARCHY_DIR,
-                               CONFIG_FILE, PROCESS_FILE, SYSTEM_FILE)
+                               CONFIG_FILE, PROCESS_FILE, SYSTEM_FILE, STYLE_DIR)
 active_downloads = {}  # {file_name: threading.Thread}
 stop_flags = {}        # {file_name: threading.Event}
 from ..config_loader import config_background
-SYSTEM_THEME = config_background()
+
 
 bp = Blueprint('execute', __name__)
 
 @bp.route('/run/thumbnail-generator/<file>')
 def run_thumbnail_generator(file):
-    return render_template('thumb.html', file=file, system_theme=SYSTEM_THEME)
+    return render_template('thumb.html', file=file, system_theme=config_background())
 
 @bp.route('/execute')
 def execute_index():
@@ -29,13 +29,13 @@ def execute_index():
         files = json.load(f)
         for item in files:
             funfiles.append({'name': item['file'].split('-')[0]})
-    return render_template('execute.html', download_dir=DOWNLOAD_DIR, funfiles=funfiles, system_theme=SYSTEM_THEME)
+    return render_template('execute.html', download_dir=DOWNLOAD_DIR, funfiles=funfiles, system_theme=config_background())
 
 @bp.route('/execute/install/<file>')
 def execute_installation(file):
     type=(file.split('-')[1]).split('.')[0]
     print('downloading',type,file)
-    return render_template('install.html', file=file, type=type , download_dir=DOWNLOAD_DIR, system_theme=SYSTEM_THEME)
+    return render_template('install.html', file=file, type=type , download_dir=DOWNLOAD_DIR, system_theme=config_background())
 
 @bp.route('/execute/thumbnail/<file>')
 def execute_thumbnail(file):
@@ -574,5 +574,7 @@ def config():
         system['theme'] = 'default'
         with open(SYSTEM_FILE, 'w', encoding='utf-8') as f:
             json.dump(system, f, ensure_ascii=False, indent=4)
+    styles = os.listdir(STYLE_DIR)
+    styles.remove('style.css')
 
-    return render_template('config.html', entries=entries, where='config', system_theme=system_theme)
+    return render_template('config.html', entries=entries, where='config', system_theme=system_theme, styles=styles)

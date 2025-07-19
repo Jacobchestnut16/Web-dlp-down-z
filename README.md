@@ -131,7 +131,10 @@ The `view` section can be found in the settings tab with the top menu
 # Upgrade compatibility:
 - v1.3.6 → direct
 - v1.3.5 → partial / manual change required
-- < v1.3.5 → legacy / follow the directions in the `Backup recovery` issue
+- < v1.3.5 → legacy / needs multiple configurations and changes to update. best option is to download the newest version and follow the below instructions.
+
+follow the directions in the `Backup recovery` issue to complete all changes.
+this is a major structure update and this update may not have all of the tools to move files where they need to go.
 
 ---
 

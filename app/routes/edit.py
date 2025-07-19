@@ -7,7 +7,7 @@ from flask import render_template, url_for, request, redirect,Blueprint
 from app.config_loader import (FILE_CONFIG, DOWNLOAD_DIR, PLAYLIST_PROCESS_FILE, DOWNLOAD_FILE,
                                HIERARCHY_DIR, CONFIG_FILE, PROCESS_FILE, DEFAULT_CONFIG_FILE, DATA_DIR)
 from ..config_loader import config_background
-SYSTEM_THEME = config_background()
+
 
 bp = Blueprint('edit', __name__)
 
@@ -21,7 +21,7 @@ def edit_index():
             funfiles.append({'file': item['file'], 'install-playlist': item['install-playlist'], 'install-directory': item['install-directory']})
 
     print("FILES LOADED:", funfiles)
-    return render_template('file.html', funfiles=funfiles, system_theme=SYSTEM_THEME)
+    return render_template('file.html', funfiles=funfiles, system_theme=config_background())
 
 @bp.route('/edit/<file>', methods=['GET', 'POST'])
 def edit(file):
@@ -104,7 +104,7 @@ def edit(file):
 
     return render_template('file.html', entries=entries, where=file_name, funfiles=funfiles, type=type,
                            install=install, installOpts=installOpts, name=named, files=cnt,
-                           downloadAs=(downloadAs if downloadAs else 'web_default'), system_theme=SYSTEM_THEME)
+                           downloadAs=(downloadAs if downloadAs else 'web_default'), system_theme=config_background())
 
 
 @bp.route('/save/installs', methods=['POST'])
@@ -133,7 +133,7 @@ def save_installs():
 
 @bp.route('/create-file')
 def create_file():
-    return render_template('createfile.html', system_theme=SYSTEM_THEME)
+    return render_template('createfile.html', system_theme=config_background())
 
 
 @bp.route('/new', methods=['GET', 'POST'])
