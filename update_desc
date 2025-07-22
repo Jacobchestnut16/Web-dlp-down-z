@@ -1,11 +1,12 @@
-- System-wide restructure. This is for updates alone, instead of changes to app.py changes now appear in places like `routes` which is the source of all app functions:
-  - all files in `static` and `templates` should now be found inside of the app folder
-  - config files are now located in `instance` folder
-  - log files are in the `logs` folder
-  - the `data` folder houses all the lists .json files
 - New features:
   - Styles:
     - Now indexes the `static/css` folder so that drag and drop can work
-<br>
-Before updating change app.py the last line to look like this:<br>
-app.run(debug=True, host='0.0.0.0', port=8080, use_reloader=False)
+  - Cookies:
+    - You can now download Private and payed content that you can access from your account
+    - use a tool like Cookie editor to copy the cookies. go to `web-dlp-down-z/app/data` add a file call it `cookies.json`
+    - not all cookies work to get past these walls, and not all websites work with yt-dlp
+
+- Fixes:
+ - Download files not removing links after they are downloaded.
+ - Fixes to update function to properly find files.
+ - Fix to some files not applying the chosen style.

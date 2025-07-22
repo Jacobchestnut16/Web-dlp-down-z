@@ -150,7 +150,9 @@
                     "app/templates/execute.html",
                     "app/templates/file.html",
                     "app/templates/update.html",
-                    "app/config_loader.py"
+                    "app/config_loader.py",
+                    "app/static/css/warm.css",
+                    "app/static/css/warm-night.css"
                 ]
             }
         }

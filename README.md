@@ -150,7 +150,8 @@ this is a major structure update and this update may not have all of the tools t
     - Now indexes the `static/css` folder so that drag and drop can work
   - Cookies:
     - You can now download Private and payed content that you can access from your account
-    - go to the website login find you cookies using the inspect tool, follow your browsers directions to find the cookies tap, copy things like `sessionid` `auth_token` `access_token`, copy this to web-dlp-down-z/app/data/cookies.txt
+    - use a tool like Cookie editor to copy the cookies. go to `web-dlp-down-z/app/data` add a file call it `cookies.json`
+    - not all cookies work to get past these walls, and not all websites work with yt-dlp
 ---
 
 ## 📌 Requirements

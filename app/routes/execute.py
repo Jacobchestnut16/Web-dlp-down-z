@@ -272,7 +272,7 @@ def execute_download_file(file):
         retry = []
 
         yield "data: Starting Downloading process...\n\n"
-        logging.info("data: Downloading started")
+        print("data: Downloading started")
         try:
             with open(os.path.join(DATA_DIR, download_file), 'r', encoding='utf-8') as f:
                 download_json = json.load(f)
@@ -284,6 +284,7 @@ def execute_download_file(file):
 
             # Step 2: Process each line one by one
             for file in download_files:
+                print(f"file: {file['file']}")
                 current_index += 1
                 url = file["url"]  # filename URL
                 name = file["file"] if file["file"] else "unnamed"
@@ -292,6 +293,55 @@ def execute_download_file(file):
 
 
                 # Progress hook to receive download updates
+                if HIERARCHY_DIR:
+                    download_to = os.path.normpath(
+                        os.path.join(download_to, webpage_url_domain, uploader)
+                    ) + os.path.sep
+
+                    os.makedirs(download_to, exist_ok=True)
+                yield f"data: Download_dir ^{download_to}\n\n"
+                print(f"data: download_dir: {download_to}")
+
+                yield "data: grabbing cookies\n\n"
+                print("data: grabbing cookies")
+
+                def json_cookies_to_netscape_string(cookies_json):
+                    """
+                    Convert JSON cookies (list of dicts) to Netscape cookie format string.
+                    """
+                    lines = []
+                    lines.append("# Netscape HTTP Cookie File")
+                    lines.append("# This file is generated from JSON cookies\n")
+
+                    for c in cookies_json:
+                        print(c)
+                        domain = c.get('domain', '')
+                        flag = "TRUE" if domain.startswith('.') else "FALSE"
+                        path = c.get('path', '/')
+                        secure = "TRUE" if c.get('secure', False) else "FALSE"
+                        expiry = str(int(c.get('expirationDate', c.get('expires', 0))))
+                        name = c.get('name', '')
+                        value = c.get('value', '')
+                        lines.append(f"{domain}\t{flag}\t{path}\t{secure}\t{expiry}\t{name}\t{value}")
+
+                    with open(os.path.join(DATA_DIR, 'cookies.txt'), 'w', encoding='utf-8') as out:
+                        out.write("\n".join(lines))
+
+                    return "\n".join(lines)
+
+                try:
+                    with open(os.path.join(DATA_DIR, 'cookies.json'), 'r', encoding='utf-8') as f:
+                        cookies_json = json.load(f)
+                    cookies = json_cookies_to_netscape_string(cookies_json)
+                    yield f'data: cookies: {cookies}\n\n'
+                except FileNotFoundError:
+                    try:
+                        with open(os.path.join(DATA_DIR, 'cookies.txt'), 'r', encoding='utf-8') as f:
+                            cookies = f.read().strip().replace('\n', '')
+                        yield f'data: cookies: {cookies}\n\n'
+                    except Exception as e:
+                        yield f"data: cookies file not found, skipping: {e}\n\n"
+
                 def progress_hook(d):
                     if d['status'] == 'downloading':
                         percent = ansi_escape.sub('', d.get('_percent_str', '').strip())
@@ -317,18 +367,12 @@ def execute_download_file(file):
                     yield f"data: {str(e).splitlines()[0]}\n\n"
                     continue
 
-                if HIERARCHY_DIR:
-                    download_to = os.path.normpath(
-                        os.path.join(download_to, webpage_url_domain, uploader)
-                    ) + os.path.sep
-
-                    os.makedirs(download_to, exist_ok=True)
-                yield f"data: Download_dir ^{download_to}\n\n"
 
                 ydl_opts = {
                     'format': 'bestaudio/best' if downloadAs in AUDIO_FORMATS else ('bestvideo+bestaudio/best' if downloadAs in VIDEO_FORMATS else 'best'),
                     'outtmpl': f'{download_to}%(title)s.%(ext)s',
                     'addmetadata': True,
+                    'verbose': True,
                     'progress_hooks': [progress_hook],  # ✅ This is critical!
                     'postprocessor_args': [
                         '-metadata', f'comment={description}',
@@ -336,6 +380,8 @@ def execute_download_file(file):
                         '-metadata', f'album={webpage_url_domain}'
                     ]
                 }
+                if cookies:
+                    ydl_opts['cookiefile'] = os.path.join(DATA_DIR, 'cookies.txt')
 
                 if downloadAs in AUDIO_FORMATS:
                     ydl_opts.update({
@@ -360,12 +406,6 @@ def execute_download_file(file):
                         }]
                     })
 
-                try:
-                    with open(os.path.join(DATA_DIR, 'cookies.txt'), 'r', encoding='utf-8') as f:
-                        cookies = f.read().strip().replace('\n', '')
-                    ydl_opts['http_headers'] = {'Cookie': cookies}
-                except Exception as e:
-                    logging.info(f"cookies file not found, skipping: {e}")
 
                 try:
                     def download_and_drain():
