@@ -1,5 +1,5 @@
 {
-    "version": "2.0.1.1",
+    "version": "2.0.1",
     "versions": [
         {
             "1.3.2": {
@@ -140,7 +140,7 @@
             }
         },
         {
-            "2.0.1.1" : {
+            "2.0.1" : {
                 "add": [
                     "app/routes/edit.py",
                     "app/routes/execute.py",
