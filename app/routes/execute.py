@@ -380,8 +380,11 @@ def execute_download_file(file):
                         '-metadata', f'album={webpage_url_domain}'
                     ]
                 }
-                if cookies:
-                    ydl_opts['cookiefile'] = os.path.join(DATA_DIR, 'cookies.txt')
+                try:
+                    if cookies:
+                        ydl_opts['cookiefile'] = os.path.join(DATA_DIR, 'cookies.txt')
+                except:
+                    pass
 
                 if downloadAs in AUDIO_FORMATS:
                     ydl_opts.update({
