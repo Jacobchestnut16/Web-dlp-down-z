@@ -25,7 +25,7 @@ SYSTEM_FILE = os.path.join(SYSTEM_DIR, 'system.json')
 
 def configBackground():
     global DOWNLOAD_DIR, DOWNLOAD_FILE, PROCESS_FILE, DOWNLOAD_FILE, PROCESS_FILE, HIERARCHY_DIR, SYSTEM_THEME
-    with open('instance/config.json', 'r', encoding='utf-8') as f:
+    with open(os.path.join(SYSTEM_DIR,'config.json'), 'r', encoding='utf-8') as f:
         config = json.load(f)
     logfile = config['web-dlp-down-z Log file']
     logging.basicConfig(filename=logfile, level=logging.DEBUG)
@@ -33,13 +33,13 @@ def configBackground():
 
     config_background()
 
-    with open('../system.json', 'r', encoding='utf-8') as f:
+    with open(os.path.join(SYSTEM_DIR,'system.json'), 'r', encoding='utf-8') as f:
         system = json.load(f)
     try:
         SYSTEM_THEME = system['theme']
     except Exception as e:
         system['theme'] = 'default'
-        with open('../system.json', 'w', encoding='utf-8') as f:
+        with open(os.path.join(SYSTEM_DIR,'system.json'), 'w', encoding='utf-8') as f:
             json.dump(system, f, ensure_ascii=False, indent=4)
     logging.info(f"web setConfigSettings: SYSTEM theme: {SYSTEM_THEME}")
 
@@ -77,6 +77,7 @@ def configBackground():
         logging.error(f"configBackground: could not open Playlist Processed File: {str(e)}")
 
 def config_background():
+    global SYSTEM_THEME
     system_file = os.path.join(SYSTEM_DIR, 'system.json')
     with open(system_file, 'r', encoding='utf-8') as f:
         system = json.load(f)
@@ -84,7 +85,7 @@ def config_background():
         SYSTEM_THEME = system['theme']
     except Exception as e:
         system['theme'] = 'default'
-        with open('../system.json', 'w', encoding='utf-8') as f:
+        with open(system_file, 'w', encoding='utf-8') as f:
             json.dump(system, f, ensure_ascii=False, indent=4)
     logging.info(f"web setConfigSettings: SYSTEM theme: {SYSTEM_THEME}")
     return SYSTEM_THEME

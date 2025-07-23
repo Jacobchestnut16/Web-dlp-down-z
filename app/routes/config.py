@@ -9,7 +9,7 @@ bp = Blueprint('config', __name__)
 @bp.route('/setConfigSettings')
 def setConfigSettings():
     configBackground()
-    return redirect(url_for('config'))
+    return redirect(url_for('execute.config'))
 
 @bp.route('/set/theme', methods=['GET', 'POST'])
 def set_theme():

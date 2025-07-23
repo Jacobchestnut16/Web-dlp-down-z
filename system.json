@@ -143,9 +143,11 @@
             "2.0.1" : {
                 "add": [
                     "app/routes/edit.py",
+                    "app/config_loader.py",
                     "app/routes/execute.py",
                     "app/routes/update.py",
                     "app/routes/execute.py",
+                    "app/routes/config.py",
                     "app/templates/config.html",
                     "app/templates/execute.html",
                     "app/templates/file.html",

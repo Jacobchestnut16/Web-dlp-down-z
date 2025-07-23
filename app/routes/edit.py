@@ -258,31 +258,11 @@ def remove_group(group):
 def save():
     filenames = request.form.getlist('filename')
     websites = request.form.getlist('website')
-    description = request.form.getlist('description')
-    duration = request.form.getlist('duration')
-    file = request.form.get('file')
 
-    if file == CONFIG_FILE:
-        data = dict(zip(filenames, websites))
-        with open(CONFIG_FILE, 'w') as f:
-            json.dump(data, f, indent=4)
-        return redirect(url_for('config.setConfigSettings'))
-
-    try:
-        entries = []
-        for name, site, desc, dur in zip(filenames, websites, description, duration):
-            entries.append({
-                'file': name,
-                'url': site,
-                'description': desc,
-                'duration': dur
-            })
-        with open(file, 'w', encoding='utf-8') as f:
-            json.dump(entries, f, indent=4)
-    except Exception as e:
-        return f"Error: {e}"
-    else:
-        return redirect(url_for('execute.run_thumbnail_generator', file=file))
+    data = dict(zip(filenames, websites))
+    with open(CONFIG_FILE, 'w') as f:
+        json.dump(data, f, indent=4)
+    return redirect(url_for('config.setConfigSettings'))
 
 
 @bp.route('/save/downloadAs', methods=['GET', 'POST'])
