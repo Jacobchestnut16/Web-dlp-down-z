@@ -98,6 +98,8 @@ def execute_thumbnail(file):
                             json.dump(json_data, f, indent=4)
                     else:
                         yield f"data: Error: File {name} Failed to update metadata.\n\n"
+                else:
+                    yield (f"data:Item ({current_index}/{total}), metadata for {name} already exists skipping\n\n")
         except Exception as e:
             yield f"data: Error: File {name} Failed to update metadata.\n\n"
 
