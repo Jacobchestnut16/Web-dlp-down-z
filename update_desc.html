@@ -1,0 +1,33 @@
+<h2>New features:</h2>
+<ul>
+    <li>
+        <h3>Styles</h3>
+        <ul>
+            <li>Now indexes the `static/css` folder so that drag and drop can work</li>
+        </ul>
+    </li>
+    <li>
+        <h3>Cookies</h3>
+        <ul>
+            <li>You can now download Private and payed content that you can access from your account</li>
+            <li>use a tool like Cookie editor to copy the cookies. go to `web-dlp-down-z/app/data` add a file call it `cookies.json`</li>
+            <li>not all cookies work to get past these walls, and not all websites work with yt-dlp</li>
+        </ul>
+    </li>
+        <li>
+        <h3>Extractor</h3>
+        <ul>
+            <li>While some playlist links work well with yt-dlp not all do, so welcome in extractor</li>
+            <li>This uses BS4 to extract links from any page</li>
+            <li>It is set up to have max page limits & custom urls to fit any websites design for pages outside of hidden page pagination</li>
+        </ul>
+    </li>
+</ul>
+<h2>Fixes:</h2>
+<ul>
+    <li>Download files not removing links after they are downloaded.</li>
+    <li>Fixes to update function to properly find files.</li>
+    <li>Fix to some files not applying the chosen style.</li>
+    <li>Fix to cookie file look up, no duplicate outputs per-file downloaded</li>
+    <li>fix to thumbnail generator, stops looking up each file unless needed</li>
+</ul>
