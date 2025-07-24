@@ -164,7 +164,8 @@
                     "app/routes/__init__.py",
                     "app/routes/extractor.py",
                     "app/templates/extractor.html",
-                    "app/templates/file.html"
+                    "app/templates/file.html",
+                    "requirements.txt"
                 ]
             }
         }
