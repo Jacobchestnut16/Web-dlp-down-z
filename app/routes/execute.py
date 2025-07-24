@@ -61,7 +61,7 @@ def execute_thumbnail(file):
                 url = file["url"]  # filename URL
                 name = file["file"] if file["file"] else "unnamed"
 
-                if file.get("duration") in [None, "", "None"] or file.get("description") in [None, ""]:
+                if file.get("duration") in [None, ""] or file.get("description") in [None, ""] or file.get("thumbnail") in [None, ""]:
                     yield (f"data:Item ({current_index}/{total}), Updating metadata for {name}: {('Duration.' if not file.get('duration') else '')}"
                            f" {('Description.' if not file.get('duration') else '')} {('thumbnail.' if not file.get('thumbnail') else '')}\n\n")
                     ydl_opts = {
@@ -282,6 +282,46 @@ def execute_download_file(file):
 
             download_files = download_json.copy()
 
+            yield "data: grabbing cookies\n\n"
+            print("data: grabbing cookies")
+
+            def json_cookies_to_netscape_string(cookies_json):
+                """
+                Convert JSON cookies (list of dicts) to Netscape cookie format string.
+                """
+                lines = []
+                lines.append("# Netscape HTTP Cookie File")
+                lines.append("# This file is generated from JSON cookies\n")
+
+                for c in cookies_json:
+                    print(c)
+                    domain = c.get('domain', '')
+                    flag = "TRUE" if domain.startswith('.') else "FALSE"
+                    path = c.get('path', '/')
+                    secure = "TRUE" if c.get('secure', False) else "FALSE"
+                    expiry = str(int(c.get('expirationDate', c.get('expires', 0))))
+                    name = c.get('name', '')
+                    value = c.get('value', '')
+                    lines.append(f"{domain}\t{flag}\t{path}\t{secure}\t{expiry}\t{name}\t{value}")
+
+                with open(os.path.join(DATA_DIR, 'cookies.txt'), 'w', encoding='utf-8') as out:
+                    out.write("\n".join(lines))
+
+                return "\n".join(lines)
+
+            try:
+                with open(os.path.join(DATA_DIR, 'cookies.json'), 'r', encoding='utf-8') as f:
+                    cookies_json = json.load(f)
+                cookies = json_cookies_to_netscape_string(cookies_json)
+                yield f'data: cookies: {cookies}\n\n'
+            except FileNotFoundError:
+                try:
+                    with open(os.path.join(DATA_DIR, 'cookies.txt'), 'r', encoding='utf-8') as f:
+                        cookies = f.read().strip().replace('\n', '')
+                    yield f'data: cookies: {cookies}\n\n'
+                except Exception as e:
+                    yield f"data: cookies file not found, skipping: {e}\n\n"
+
             # Step 2: Process each line one by one
             for file in download_files:
                 print(f"file: {file['file']}")
@@ -302,45 +342,6 @@ def execute_download_file(file):
                 yield f"data: Download_dir ^{download_to}\n\n"
                 print(f"data: download_dir: {download_to}")
 
-                yield "data: grabbing cookies\n\n"
-                print("data: grabbing cookies")
-
-                def json_cookies_to_netscape_string(cookies_json):
-                    """
-                    Convert JSON cookies (list of dicts) to Netscape cookie format string.
-                    """
-                    lines = []
-                    lines.append("# Netscape HTTP Cookie File")
-                    lines.append("# This file is generated from JSON cookies\n")
-
-                    for c in cookies_json:
-                        print(c)
-                        domain = c.get('domain', '')
-                        flag = "TRUE" if domain.startswith('.') else "FALSE"
-                        path = c.get('path', '/')
-                        secure = "TRUE" if c.get('secure', False) else "FALSE"
-                        expiry = str(int(c.get('expirationDate', c.get('expires', 0))))
-                        name = c.get('name', '')
-                        value = c.get('value', '')
-                        lines.append(f"{domain}\t{flag}\t{path}\t{secure}\t{expiry}\t{name}\t{value}")
-
-                    with open(os.path.join(DATA_DIR, 'cookies.txt'), 'w', encoding='utf-8') as out:
-                        out.write("\n".join(lines))
-
-                    return "\n".join(lines)
-
-                try:
-                    with open(os.path.join(DATA_DIR, 'cookies.json'), 'r', encoding='utf-8') as f:
-                        cookies_json = json.load(f)
-                    cookies = json_cookies_to_netscape_string(cookies_json)
-                    yield f'data: cookies: {cookies}\n\n'
-                except FileNotFoundError:
-                    try:
-                        with open(os.path.join(DATA_DIR, 'cookies.txt'), 'r', encoding='utf-8') as f:
-                            cookies = f.read().strip().replace('\n', '')
-                        yield f'data: cookies: {cookies}\n\n'
-                    except Exception as e:
-                        yield f"data: cookies file not found, skipping: {e}\n\n"
 
                 def progress_hook(d):
                     if d['status'] == 'downloading':
@@ -380,11 +381,8 @@ def execute_download_file(file):
                         '-metadata', f'album={webpage_url_domain}'
                     ]
                 }
-                try:
-                    if cookies:
-                        ydl_opts['cookiefile'] = os.path.join(DATA_DIR, 'cookies.txt')
-                except:
-                    pass
+                if cookies:
+                    ydl_opts['cookiefile'] = os.path.join(DATA_DIR, 'cookies.txt')
 
                 if downloadAs in AUDIO_FORMATS:
                     ydl_opts.update({
