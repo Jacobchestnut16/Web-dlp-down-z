@@ -166,6 +166,7 @@
                     "app/routes/execute.py",
                     "app/templates/extractor.html",
                     "app/templates/file.html",
+                    "app/templates/update.html",
                     "requirements.txt"
                 ]
             }
