@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Extractor</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/'+system_theme) }}">
+</head>
+<body>
+
+<nav>
+    <table>
+        <tr>
+            <td>
+                <a href="/edit">Edit</a>
+            </td>
+
+            <td>
+                <a href="/execute">Execute</a>
+            </td>
+            <td>
+                <a href="/config">Settings</a>
+            </td>
+        </tr>
+    </table>
+</nav>
+
+<div class="container">
+    <div class="row">
+        <div class="col">
+            <h1>Extractor</h1>
+            <p>The extractor will extract all links from any website that are considered video links. They will be auto added to your choice of install location.
+                This also gives a temporary output of all links found.
+            </p>
+            <p>Example link: https://example.com/search/{page}</p> <i>Ensure to add exactly '{page}' as this will search every page. If you don't see page in the original link try going to the second page and it will might pop up in the url.</i>
+        </div>
+    </div>
+    <form action="/extractor/extract" method="post">
+        <div class="row">
+            <label for="install">Installs to: </label>
+            <select name="install" id="install">
+                <option value="default-download.json">download</option>
+                {% for entry in installOpts %}
+                <option value="{{entry}}-download.json">{{entry}}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="row">
+            <label for="url">Url:</label>
+            <input type="text" name="extract_url" id="url">
+        </div>
+        <label for="mp">Max pages(default is 10):</label>
+        <input type="text" name="max_pages" id="mp">
+        <button type="submit">Extract</button>
+    </form>
+</div>
+
+<div class="container">
+    <div class="col">
+    {% for site in sites %}
+        <div class="row">{{ site }}</div>
+    {% endfor %}
+    </div>
+</div>
+
+</body>
+</html>

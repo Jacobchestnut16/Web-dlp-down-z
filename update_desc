@@ -5,6 +5,10 @@
     - You can now download Private and payed content that you can access from your account
     - use a tool like Cookie editor to copy the cookies. go to `web-dlp-down-z/app/data` add a file call it `cookies.json`
     - not all cookies work to get past these walls, and not all websites work with yt-dlp
+  - Extractor:
+    - While some playlist links work well with yt-dlp not all do, so welcome in extractor
+    - This uses BS4 to extract links from any page
+    - It is set up to have max page limits & custom urls to fit any websites design for pages outside of hidden page pagination
 
 - Fixes:
  - Download files not removing links after they are downloaded.

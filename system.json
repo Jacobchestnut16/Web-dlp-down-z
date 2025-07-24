@@ -1,5 +1,5 @@
 {
-    "version": "2.0.1",
+    "version": "2.0.2",
     "versions": [
         {
             "1.3.2": {
@@ -155,6 +155,16 @@
                     "app/config_loader.py",
                     "app/static/css/warm.css",
                     "app/static/css/warm-night.css"
+                ]
+            }
+        },
+        {
+            "2.0.2": {
+                "add": [
+                    "app/routes/__init__.py",
+                    "app/routes/extractor.py",
+                    "app/templates/extractor.html",
+                    "app/templates/file.html"
                 ]
             }
         }
