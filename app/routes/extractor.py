@@ -49,7 +49,7 @@ def extractor_extract():
         for response in responses:
             soup = BeautifulSoup(response.text, "html.parser")
 
-            video_keywords = ["watch", "video", "clip", "media", "embed"]
+            video_keywords = ["watch", "video", "clip", "media", "embed", "out"]
             page_links = [
                 a['href'] for a in soup.find_all('a', href=True)
                 if any(keyword in a['href'].lower() for keyword in video_keywords)

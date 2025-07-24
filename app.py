@@ -9,5 +9,5 @@ if __name__ == '__main__':
         debug=app.config["DEBUG"],
         use_reloader=app.config["USE_RELOADER"],
         host='0.0.0.0',
-        port=8080
+        port=80
     )
