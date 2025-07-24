@@ -20,6 +20,7 @@
             <li>While some playlist links work well with yt-dlp not all do, so welcome in extractor</li>
             <li>This uses BS4 to extract links from any page</li>
             <li>It is set up to have max page limits & custom urls to fit any websites design for pages outside of hidden page pagination</li>
+            <li>Resolves some links, if the link is embedded into a page and need to be resolved through link redirection, this will attempt to resolve any of those</li>
         </ul>
     </li>
 </ul>

@@ -35,13 +35,10 @@
             <p>Example link: https://example.com/search/{page}</p> <i>Ensure to add exactly '{page}' as this will search every page. If you don't see page in the original link try going to the second page and it will might pop up in the url.</i>
         </div>
     </div>
-    <form action="/extractor/extract" method="post">
+    <form action="/extractor/setExtractor" method="post">
         <div class="row">
             <label for="install">Installs to: </label>
             <select name="install" id="install">
-                {% if default %}
-                <option value="{{default}}">{{default.split('-')[0]}}</option>
-                {% endif %}
                 <option value="default-download.json">download</option>
                 {% for entry in installOpts %}
                 <option value="{{entry}}-download.json">{{entry}}</option>
@@ -60,11 +57,33 @@
 
 <div class="container">
     <div class="col">
-    {% for site in sites %}
-        <div class="row">{{ site }}</div>
-    {% endfor %}
+        <div class="row"><pre id="log"></pre></div>
     </div>
 </div>
+
+<script>
+    {% if install %}
+    const eventSource = new EventSource("/extractor/extract");
+    {% endif %}
+        const logElement = document.getElementById("log");
+
+        eventSource.onmessage = function (event) {
+            const msg = event.data;
+
+                if (event.data.startsWith("REDIRECT ")) {
+                    const targetUrl = event.data.replace("REDIRECT ", "").trim();
+                    eventSource.close();
+                    window.location.href = targetUrl;
+                }
+                logElement.textContent += msg + "\n";
+                logElement.scrollTop = logElement.scrollHeight;
+        };
+
+        eventSource.onerror = function () {
+            logElement.textContent += "[Error receiving download updates]\n";
+            eventSource.close();
+        };
+</script>
 
 </body>
 </html>
