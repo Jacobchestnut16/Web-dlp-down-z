@@ -71,9 +71,21 @@ def execute_thumbnail(file):
                     with YoutubeDL(ydl_opts) as ydl:
                         try:
                             info = ydl.extract_info(url, download=False)
-                            thumbnail = info.get('thumbnail')
-                            duration = info.get('duration')
-                            description = info.get('description')
+                            try:
+                                thumbnail = info.get('thumbnail')
+                            except Exception:
+                                thumbnail = ''
+                            try:
+                                duration = info.get('duration')
+                            except Exception as e:
+                                if "private" in str(e).lower():
+                                    duration = 'PRIVATE VIDEO'
+                                else:
+                                    duration = 'None'
+                            try:
+                                description = info.get('description')
+                            except Exception:
+                                description = ''
                         except Exception as e:
                             if "private" in str(e).lower():
                                 duration = 'PRIVATE VIDEO'

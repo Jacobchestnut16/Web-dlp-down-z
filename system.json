@@ -173,6 +173,22 @@
                     "requirements.txt"
                 ]
             }
+        },
+        {
+            "2.0.3": {
+                "add": [
+                    "app.py",
+                    "app/routes/__init__.py",
+                    "app/routes/extractor.py",
+                    "app/routes/execute.py",
+                    "app/routes/update.py",
+                    "app/templates/extractor.html",
+                    "app/templates/file.html",
+                    "app/templates/update.html",
+                    "app/templates/update.html",
+                    "requirements.txt"
+                ]
+            }
         }
     ],
     "theme": "code_dark.css"

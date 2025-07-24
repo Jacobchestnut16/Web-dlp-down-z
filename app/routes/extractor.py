@@ -1,5 +1,4 @@
 import os
-from http.client import responses
 
 import requests
 from bs4 import BeautifulSoup
@@ -7,6 +6,7 @@ import json
 from urllib.parse import urlparse
 
 from flask import render_template, url_for, request, redirect,Blueprint
+from yt_dlp import YoutubeDL
 
 from app.config_loader import (FILE_CONFIG, DOWNLOAD_DIR, PLAYLIST_PROCESS_FILE, DOWNLOAD_FILE,
                                HIERARCHY_DIR, CONFIG_FILE, PROCESS_FILE, DEFAULT_CONFIG_FILE, DATA_DIR)
@@ -73,10 +73,43 @@ def extractor_extract():
             last_segment = parsed.path.rstrip('/').split('/')[-1] or 'untitled'
             video_title = last_segment
 
+            ydl_opts = {
+                'skip_download': True,
+                'quiet': True
+            }
+
+            with YoutubeDL(ydl_opts) as ydl:
+                try:
+                    info = ydl.extract_info(url, download=False)
+                    try:
+                        thumbnail = info.get('thumbnail')
+                    except Exception:
+                        thumbnail = ''
+                    try:
+                        duration = info.get('duration')
+                    except Exception as e:
+                        if "private" in str(e).lower():
+                            duration = 'PRIVATE VIDEO'
+                        else:
+                            duration = 'None'
+                    try:
+                        description = info.get('description')
+                    except Exception:
+                        description = ''
+                except Exception as e:
+                    if "private" in str(e).lower():
+                        duration = 'PRIVATE VIDEO'
+                    else:
+                        duration = 'None'
+                    description = ''
+                    thumbnail = ''
             if link not in existing_urls:
                 entries.append({
                     "file": video_title,
-                    "url": link
+                    "url": link,
+                    'duration': duration,
+                    'description': description,
+                    'thumbnail': thumbnail,
                 })
                 existing_urls.add(link)
             with open(download_to, 'w', encoding='utf-8') as f:
@@ -86,5 +119,5 @@ def extractor_extract():
             files = json.load(f)
             for item in files:
                 installOpts.append(item['file'])
-        return render_template("extractor.html", sites=links, system_theme=config_background(), installOpts=installOpts)
+        return render_template("extractor.html", sites=links, system_theme=config_background(), installOpts=installOpts, default=request.form['install'])
 

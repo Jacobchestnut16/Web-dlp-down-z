@@ -39,6 +39,9 @@
         <div class="row">
             <label for="install">Installs to: </label>
             <select name="install" id="install">
+                {% if default %}
+                <option value="{{default}}">{{default.split('-')[0]}}</option>
+                {% endif %}
                 <option value="default-download.json">download</option>
                 {% for entry in installOpts %}
                 <option value="{{entry}}-download.json">{{entry}}</option>
