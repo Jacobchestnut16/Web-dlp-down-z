@@ -132,7 +132,7 @@ def extractor_extract():
 
                 with YoutubeDL(ydl_opts) as ydl:
                     try:
-                        info = ydl.extract_info(parsed, download=False)
+                        info = ydl.extract_info(link, download=False)
                         try:
                             thumbnail = info.get('thumbnail')
                         except Exception:
