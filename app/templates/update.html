@@ -39,11 +39,11 @@
 <h2>Current Version: {{current}}</h2>
 <p>{{updateTxt}} {% if updateVersion %}{{updateVersion}}{% endif %}</p>
 {% if updateVersion %}<button onclick="start()">Update now</button>{% endif %}
-<div id="update_desc">{{update_desc}}</div>
+<div id="update_desc"></div>
 <pre id="log"></pre>
 
 <script>
-    document.getElementById('update_desc').innerHTML = {{update_desc}};
+    document.getElementById('update_desc').innerHTML = '{{update_desc.replace('\n','') | safe}}';
     function start() {
         document.getElementById('update_desc').className = 'hide';
         const logElement = document.getElementById("log");
