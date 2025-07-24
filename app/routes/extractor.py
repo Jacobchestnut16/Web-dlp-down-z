@@ -92,11 +92,14 @@ def extractor_extract():
                     if '/out/' in link:
                         resolve = True
                 if resolve:
+                    resov_index = 0
+                    resov_max = len(raw_links)
                     for href in raw_links:
+                        resov_index += 1
                         if '/out/' in href:
-                            yield f"data: Resolving link {href[:140]}{'...' if len(href) > 140 else ''}\n\n"
+                            yield f"data: Resolving link {resov_index}/{resov_max} {href[:140]}{'...' if len(href) > 140 else ''}\n\n"
                             resolved = resolve_redirect(href, base_url=url)
-                            yield f"data: Resolving link {resolved}\n\n"
+                            yield f"data: Resolving link {resov_index}/{resov_max} {resolved}\n\n"
                             links.append(resolved)
                         else:
                             links.append(urljoin(url, href))
