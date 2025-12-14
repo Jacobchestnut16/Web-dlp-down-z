@@ -1,5 +1,5 @@
 {
-    "version": "2.0.2",
+    "version": "2.0.3",
     "versions": [
         {
             "1.3.2": {
@@ -161,13 +161,41 @@
         {
             "2.0.2": {
                 "add": [
+                    "app.py",
                     "app/routes/__init__.py",
                     "app/routes/extractor.py",
                     "app/routes/execute.py",
+                    "app/routes/update.py",
                     "app/templates/extractor.html",
                     "app/templates/file.html",
                     "app/templates/update.html",
+                    "app/templates/update.html",
                     "requirements.txt"
+                ]
+            }
+        },
+        {
+            "2.0.3": {
+                "add": [
+                    "app.py",
+                    "app/routes/__init__.py",
+                    "app/routes/extractor.py",
+                    "app/routes/execute.py",
+                    "app/routes/update.py",
+                    "app/templates/extractor.html",
+                    "app/templates/file.html",
+                    "app/templates/update.html",
+                    "app/templates/update.html",
+                    "requirements.txt"
+                ]
+            }
+        },
+        {
+            "2.0.4": {
+                "add": [
+                    "app/routes/extractor.py",
+                    "app/routes/execute.py",
+                    "aap/routes/edit.py"
                 ]
             }
         }

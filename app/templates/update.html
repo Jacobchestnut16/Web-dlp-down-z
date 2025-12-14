@@ -39,6 +39,13 @@
 <h2>Current Version: {{current}}</h2>
 <p>{{updateTxt}} {% if updateVersion %}{{updateVersion}}{% endif %}</p>
 {% if updateVersion %}<button onclick="start()">Update now</button>{% endif %}
+{% if warning %}
+    <div style="color: red; background: #fff3cd; padding: 10px; border: 1px solid #f5c6cb;">
+    <h1>Warning you may have use_reloader set to true</h1>
+    <p>disable this in app.py there should be a line the needs to say:
+        'app.config["USE_RELOADER"] = False'. Updates cannot apply while this is enabled</p>
+    </div>
+{% endif %}
 <div id="update_desc"></div>
 <pre id="log"></pre>
 

@@ -25,7 +25,6 @@ def edit_index():
 
 @bp.route('/edit/<file>', methods=['GET', 'POST'])
 def edit(file):
-
     entries = []
     funfiles = []
     downloadAs = 'default'
@@ -109,6 +108,7 @@ def edit(file):
 
 @bp.route('/save/installs', methods=['POST'])
 def save_installs():
+    print("SAVEINSTALLS")
     install = os.path.normpath(request.form['install'])
     if not install.endswith(os.path.sep):
         install += os.path.sep
@@ -170,26 +170,17 @@ def new():
 
 @bp.route('/group/action', methods=['GET', 'POST'])
 def group_action():
-    def save(file, websites, filenames, description, duration, downloadAs, thumbnail):
+    def save(file, blob):
         try:
             entries, seen_urls = [], set()
-            for name, site, desc, dur, dow, thumb in zip(filenames, websites, description, duration, downloadAs, thumbnail):
-                if site not in seen_urls:
-                    entry = {
-                        'file': name,
-                        'url': site,
-                        'description': desc,
-                        'duration': dur,
-                        'downloadAs': dow
-                    }
-                    if thumb:
-                        entry['thumbnail'] = thumb
+            for entry in blob:
+                if entry['file'] not in seen_urls:
                     entries.append(entry)
-                    seen_urls.add(site)
+                    seen_urls.add(entry['file'])
             with open(file, 'w', encoding='utf-8') as f:
                 json.dump(entries, f, indent=4)
         except Exception as e:
-            print("ERROR:", e)
+            print("ERROR:",e)
 
     def save_playlist(file, websites, filenames):
         try:
@@ -219,7 +210,24 @@ def group_action():
         if type == 'playlist':
             save_playlist(file, websites, filenames)
         elif type == 'download':
-            save(file, websites, filenames, description, duration, downloadAs, thumb)
+            sanitize_to_json_blob = []
+
+            for i in range(len(filenames)):
+                snt_obj = {
+                    'file': filenames[i] if filenames[i] else '',
+                    'url': websites[i] if websites[i] else '',
+                    'description': description[i] if description[i] else '',
+                    'duration': duration[i] if duration[i] else '',
+                    'downloadAs': downloadAs[i] if downloadAs[i] else '',
+                }
+                try:
+                    if thumb[i]:
+                        snt_obj['thumbnail'] = thumb[i]
+                except:
+                    pass
+                sanitize_to_json_blob.append(snt_obj)
+
+            save(file, sanitize_to_json_blob)
 
         if action == 'execute':
             return redirect(url_for('execute.execute_installation', file=o_file))

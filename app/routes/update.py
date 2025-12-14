@@ -193,12 +193,14 @@ def update_now():
 
 @bp.route('/update')
 def update():
+    from flask import current_app
+    debug_mode = current_app.config.get('USE_RELOADER', False)
     with open(SYSTEM_FILE, 'r', encoding='utf-8') as f:
         current = json.load(f)['version']
     update = check_for_updates()
     if update[0] == "Update required":
         return render_template('update.html', updateTxt=update[0], updateVersion=update[1], current=current,
-                               system_theme=config_background(), update_desc=fetch_remote_file(BASE_URL+'update_desc'))
+                               system_theme=config_background(), update_desc=fetch_remote_file(BASE_URL+'update_desc'), warning=debug_mode)
     else:
         return render_template('update.html', updateTxt=update[0], current=current,
                                system_theme=config_background(), update_desc=fetch_remote_file(BASE_URL+'update_desc'))

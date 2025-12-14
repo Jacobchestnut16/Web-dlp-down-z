@@ -71,9 +71,21 @@ def execute_thumbnail(file):
                     with YoutubeDL(ydl_opts) as ydl:
                         try:
                             info = ydl.extract_info(url, download=False)
-                            thumbnail = info.get('thumbnail')
-                            duration = info.get('duration')
-                            description = info.get('description')
+                            try:
+                                thumbnail = info.get('thumbnail')
+                            except Exception:
+                                thumbnail = ''
+                            try:
+                                duration = info.get('duration')
+                            except Exception as e:
+                                if "private" in str(e).lower():
+                                    duration = 'PRIVATE VIDEO'
+                                else:
+                                    duration = 'None'
+                            try:
+                                description = info.get('description')
+                            except Exception:
+                                description = ''
                         except Exception as e:
                             if "private" in str(e).lower():
                                 duration = 'PRIVATE VIDEO'
@@ -110,9 +122,9 @@ def execute_thumbnail(file):
 @bp.route('/execute/playlist/<file>')
 def execute_playlist_file(file):
     logging.basicConfig(level=logging.DEBUG)
-
     file_name = (file.split('-')[0])
     file_type = ((file.split('-')[1]).split('.'))[0]
+    print('PLAYLIST FLATTENING')
     with open(FILE_CONFIG, 'r', encoding='utf-8') as f:
         files = json.load(f)
     if file_type != 'default':
@@ -126,6 +138,7 @@ def execute_playlist_file(file):
     download_to = os.path.normpath(download_to)
 
     logging.info(f'Flattening to {download_to}')
+    print(f'Flattening to {download_to}')
     def generate(file):
         ydl_opts = {
             'skip_download': True,
@@ -134,7 +147,44 @@ def execute_playlist_file(file):
             'extract_flat': 'in_playlist'
         }
 
+        def Get_Metadata(blob):
+            url = blob["url"]  # filename URL
+            name = blob["title"] if blob["title"] else "unnamed"
+            ret = {'url': url, 'name': name}
+            ydl_opts = {
+                'skip_download': True,
+                'quiet': True
+            }
+            with YoutubeDL(ydl_opts) as ydl:
+                try:
+                    info = ydl.extract_info(url, download=False)
+                    print("3")
+                    try:
+                        ret["thumbnail"] = info.get('thumbnail')
+                    except Exception:
+                        ret["thumbnail"] = ''
+                    try:
+                        ret["duration"] = info.get('duration')
+                    except Exception as e:
+                        if "private" in str(e).lower():
+                            ret["duration"] = 'PRIVATE VIDEO'
+                        else:
+                            ret["duration"] = 'None'
+                    try:
+                        ret["description"] = info.get('description')
+                    except Exception:
+                        ret["description"] = ''
+                except Exception as e:
+                    if "private" in str(e).lower():
+                        ret["duration"] = 'PRIVATE VIDEO'
+                    else:
+                        ret["duration"] = 'None'
+                    ret["description"] = ''
+                    ret["thumbnail"] = ''
+            return ret
+
         yield "data: Starting playlist separation...\n\n"
+        print( "data: Starting playlist separation...")
 
         try:
             with open(os.path.join(DATA_DIR,file), 'r', encoding='utf-8') as f:
@@ -155,12 +205,12 @@ def execute_playlist_file(file):
 
                         if '_type' in info and info['_type'] == 'playlist':
                             entries = info.get('entries', [])
-                            # print(entries)
                             for entry in entries:
+                                # print(entry)
                                 video_title = entry.get('title', 'Unknown title')
                                 video_url = entry.get('url')
-                                duration = info.get("duration")
-                                description = info.get("description")
+                                duration = info.get("duration",None)
+                                description = info.get("description",None)
 
                                 if not video_url:
                                     yield f"data: ⚠️ Skipped video (missing URL): {video_title}\n\n"
@@ -174,6 +224,17 @@ def execute_playlist_file(file):
                                     video_title = last_segment
 
                                 logging.info(f'Playlist found: {video_title}')
+
+                                #get missing data
+                                if not duration or not description:
+                                    try:
+                                        entry_meta = Get_Metadata(entry)
+                                        duration = entry_meta['duration']
+                                        description = entry_meta['description']
+                                        thumbnail = entry_meta['thumbnail']
+                                    except Exception as e:
+                                        print(e)
+
 
                                 # Save it
                                 if os.path.exists(download_to):
@@ -189,12 +250,21 @@ def execute_playlist_file(file):
 
                                     # Step 2: append new entry
                                 if full_url not in existing_urls:
-                                    entries.append({
-                                        "file": video_title,
-                                        "url": full_url,
-                                        "duration": duration,
-                                        "description": description
-                                    })
+                                    if thumbnail:
+                                        entries.append({
+                                            "file": video_title,
+                                            "url": full_url,
+                                            "duration": duration,
+                                            "description": description,
+                                            "thumbnail": thumbnail
+                                        })
+                                    else:
+                                        entries.append({
+                                            "file": video_title,
+                                            "url": full_url,
+                                            "duration": duration,
+                                            "description": description
+                                        })
                                     existing_urls.add(full_url)
 
                                 # Step 3: Write updated list back to file
@@ -232,7 +302,7 @@ def execute_playlist_file(file):
             logging.error(f'Error: {e}')
 
         yield "data: ✅ Done.\n\n"
-        yield f"data: REDIRECT /run/thumbnail-generator/{download_to}\n\n"
+        yield f"data: REDIRECT /edit/{file}\n\n"
 
     return Response(stream_with_context(generate(file)), content_type='text/event-stream')
 
@@ -608,6 +678,8 @@ def stop_download(file):
         stop_flags[file].set()  # Signal the thread to stop
         return "Stopping download...", 200
     return "No download in progress for this file.", 404
+
+
 
 @bp.route('/config')
 def config():
