@@ -117,13 +117,15 @@ def extractor_extract():
                         entries = []
 
             existing_urls = {entry.get('url') for entry in entries}
+            length_links = len(links)
 
             for link in links:
                 parsed = urlparse(link)
                 last_segment = parsed.path.rstrip('/').split('/')[-1] or 'untitled'
                 video_title = last_segment
+                idx = links.index(link) if link in links else None
 
-                yield f"data: Adding metadata for {link}\n\n"
+                yield f"data: Adding metadata for {link} {idx}/{length_links}\n\n"
 
                 ydl_opts = {
                     'skip_download': True,
@@ -131,6 +133,41 @@ def extractor_extract():
                 }
 
                 with YoutubeDL(ydl_opts) as ydl:
+                    def Get_Metadata(blob):
+                        url = blob["url"]  # filename URL
+                        name = blob["file"] if blob["file"] else "unnamed"
+                        ret = {'url': url, 'name': name}
+                        ydl_opts = {
+                            'skip_download': True,
+                            'quiet': True
+                        }
+                        with YoutubeDL(ydl_opts) as ydl:
+                            try:
+                                info = ydl.extract_info(url, download=False)
+                                print("3")
+                                try:
+                                    ret["thumbnail"] = info.get('thumbnail')
+                                except Exception:
+                                    ret["thumbnail"] = ''
+                                try:
+                                    ret["duration"] = info.get('duration')
+                                except Exception as e:
+                                    if "private" in str(e).lower():
+                                        ret["duration"] = 'PRIVATE VIDEO'
+                                    else:
+                                        ret["duration"] = 'None'
+                                try:
+                                    ret["description"] = info.get('description')
+                                except Exception:
+                                    ret["description"] = ''
+                            except Exception as e:
+                                if "private" in str(e).lower():
+                                    ret["duration"] = 'PRIVATE VIDEO'
+                                else:
+                                    ret["duration"] = 'None'
+                                ret["description"] = ''
+                                ret["thumbnail"] = ''
+                        return ret
                     try:
                         info = ydl.extract_info(link, download=False)
                         try:
@@ -164,6 +201,14 @@ def extractor_extract():
                         'thumbnail': thumbnail,
                     })
                     existing_urls.add(link)
+
+                for entry in entries:
+                    if not entry['duration'] or not entry['thumbnail']:
+                        entry_meta = Get_Metadata(entry)
+                        entry['duration'] = entry_meta['duration']
+                        entry['thumbnail'] = entry_meta['thumbnail']
+                        entry['description'] = entry_meta['description']
+
                 with open(download_to, 'w', encoding='utf-8') as f:
                     json.dump(entries, f, indent=4)
             extractor = {}

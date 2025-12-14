@@ -189,6 +189,15 @@
                     "requirements.txt"
                 ]
             }
+        },
+        {
+            "2.0.4": {
+                "add": [
+                    "app/routes/extractor.py",
+                    "app/routes/execute.py",
+                    "aap/routes/edit.py"
+                ]
+            }
         }
     ],
     "theme": "code_dark.css"
