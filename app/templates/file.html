@@ -33,6 +33,14 @@
             </td>
         </tr>
     </table>
+    <div class="sep"></div>
+    <table>
+        <tr>
+            <td>
+                <a href="/extractor">Extractor</a>
+            </td>
+        </tr>
+    </table>
 </nav>
 
 <h1>Edit
@@ -51,8 +59,6 @@
         {% endfor %}
     </div>
 </div>
-
-<div class="sep"></div>
 
 <div class="container">
     {% if type == "playlist" %}
@@ -197,7 +203,7 @@
             <div class="col thumb-col">
                 <input type="hidden" name="thumb" value="{{ entry.thumbnail if entry.thumbnail else '' }}">
                 <picture class="thumbnail">
-                    <source srcset="{{ entry.thumbnail }}" type="image/{{ entry.thumbnail.rsplit('.', 1)[-1] }}">
+                    <source srcset="{{ entry.thumbnail }}" type="image/{{ entry.thumbnail.rsplit('.', 1)[-1] if entry.thumbnail else '' }}">
                     <img src="{{ entry.thumbnail }}" alt="Thumbnail for {{ entry.filename }}">
                 </picture>
             </div>
@@ -245,15 +251,19 @@
     </div>
 
     <div class="fixed-bottom-bar">
+    <div class="left-buttons">
         {% if name != 'default' %}
         <button type="submit" name="action" value="remove" class="accent">Remove Group</button>
         {% endif %}
+    </div>
+    <div class="right-buttons">
         <button type="submit" name="action" value="save">Save</button>
         {% if type == 'playlist' %}
         <button type="submit" name="action" value="execute">Save and separate playlist</button>
         {% elif type == 'download' %}
         <button type="submit" name="action" value="execute">Save and Install</button>
         {% endif %}
+    </div>
     </div>
 </form>
 {% else %}

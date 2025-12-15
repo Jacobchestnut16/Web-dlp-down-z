@@ -1,0 +1,75 @@
+body {
+    background-color: #1f120d; /* Deep warm brown */
+    color: #f5e6d5; /* Light warm cream text */
+    font-family: 'Fira Code', 'Courier New', monospace;
+}
+
+a,
+nav a,
+div.nav-item a,
+button {
+    background-color: #3b2314; /* Dark chocolate brown */
+    color: #ffcc99; /* Soft orange-peach text */
+    transition: background-color 0.3s ease, transform 0.2s;
+}
+
+a:hover,
+nav a:hover,
+div.nav-item a:hover,
+button:hover {
+    background-color: #5a3321; /* Rich terracotta brown */
+    transform: translateY(-2px);
+}
+nav a,
+.bar{
+    background-color: #5a3321; /* Rich terracotta brown */
+}
+nav a:hover,
+.bar:hover{
+    background-color: #81492f;
+}
+
+div.container {
+    background: #2a1a13; /* Very dark warm brown */
+    border-radius: 6px;
+    border: 1px solid #4a3226; /* Slight contrast */
+}
+
+div.title {
+    background: #3b2314;
+    color: #ff914d; /* Warm orange text */
+    font-weight: bold;
+}
+
+input[type="text"],
+select {
+    background-color: #2e1b14; /* Slightly lighter input background */
+    border: 1px solid #5c4033;
+    color: #f5e6d5;
+    font-family: inherit;
+}
+
+input[type="text"]:focus,
+select:focus {
+    border-color: #ff914d; /* Accent on focus */
+    outline: none;
+}
+
+.fixed-bottom-bar {
+    background-color: #1f120d;
+    border-top: 1px solid #3a2b22;
+}
+
+div.new a {
+    background-color: #d48438; /* Warm highlight orange */
+    color: #1f120d; /* Dark background text contrast */
+}
+
+.sortable-ghost {
+    background: #3b2a1f !important; /* Subtle warm highlight */
+}
+
+.accent {
+    color: #ff7760; /* Warm coral accent */
+    border: 1px solid #ff7760;
+}
