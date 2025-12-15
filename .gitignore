@@ -1,3 +1,6 @@
 beta_key
 logs
 app/routes/__pycache__/
+.idea
+.venv
+versions
