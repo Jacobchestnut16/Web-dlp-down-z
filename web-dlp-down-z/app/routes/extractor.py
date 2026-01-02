@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup
 import json
 from urllib.parse import urlparse, urljoin
 
-from flask import render_template, url_for, request, redirect,Blueprint, Response, stream_with_context
+from flask import render_template, request, Blueprint, Response, stream_with_context
 from yt_dlp import YoutubeDL
 
 from app.config_loader import (FILE_CONFIG, DOWNLOAD_DIR, PLAYLIST_PROCESS_FILE, DOWNLOAD_FILE,

@@ -1,0 +1,8 @@
+[
+    {
+        "file": "g1",
+        "install-playlist": "g1-download.json",
+        "install-directory": "/mnt/g1/",
+        "downloadAs": "mp4"
+    }
+]

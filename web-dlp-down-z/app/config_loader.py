@@ -11,7 +11,7 @@ SYSTEM_THEME = 'default'
 DATA_DIR = os.path.join(os.path.dirname(__file__), 'data')
 SYSTEM_DIR = os.path.join(os.path.dirname(__file__), 'instance')
 LOG_DIR = os.path.join(os.path.dirname(__file__), 'logs')
-STYLE_DIR = os.path.join(os.path.dirname(__file__), 'static','css')
+STYLE_DIR = os.path.join(os.path.dirname(__file__), 'static', 'css')
 
 CONFIG_FILE = os.path.join(SYSTEM_DIR, 'config.json')
 FILE_CONFIG = os.path.join(SYSTEM_DIR, 'file_config.json')

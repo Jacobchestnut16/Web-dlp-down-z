@@ -1,0 +1,11 @@
+services:
+  web-dlp-down-y:
+    build: ./web-dlp-down-z
+    container_name: web-dlp-down-z
+    volumes:
+      - ./web-dlp-down-z/app:/app/app
+      - ${DOWNLOAD_DIR}:/mnt/Downloads
+      - ${GROUP1_DOWNLOAD}:/mnt/g1
+      - ${GROUP2_DOWNLOAD}:/mnt/g2
+    ports:
+      - ${EXPO_PORT}:80

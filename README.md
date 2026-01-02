@@ -128,30 +128,13 @@ The `view` section can be found in the settings tab with the top menu
 
 ---
 
-# Upgrade compatibility:
-- v1.3.6 → direct
-- v1.3.5 → partial / manual change required
-- < v1.3.5 → legacy / needs multiple configurations and changes to update. best option is to download the newest version and follow the below instructions.
+## Whats New v3.0.0:
 
-follow the directions in the `Backup recovery` issue to complete all changes.
-this is a major structure update and this update may not have all of the tools to move files where they need to go.
-
----
-
-## Whats New v2.0.0:
-
-- System-wide restructure. This is for updates alone, instead of changes to app.py changes now appear in places like `routes` which is the source of all app functions:
-  - all files in `static` and `templates` should now be found inside of the app folder
-  - config files are now located in `instance` folder
-  - log files are in the `logs` folder
-  - the `data` folder houses all the lists .json files
-- New features:
-  - Styles:
-    - Now indexes the `static/css` folder so that drag and drop can work
-  - Cookies:
-    - You can now download Private and payed content that you can access from your account
-    - use a tool like Cookie editor to copy the cookies. go to `web-dlp-down-z/app/data` add a file call it `cookies.json`
-    - not all cookies work to get past these walls, and not all websites work with yt-dlp
+    Docker support!!
+    Run the app inside of docker!
+    Get started install docker and run `docker compose up -d`
+    Don't forget to set up your download directories. 
+    recommended to use a known place like /mnt/<your_download_directory>
 ---
 
 ## 📌 Requirements
